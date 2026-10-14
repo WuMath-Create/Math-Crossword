@@ -7,42 +7,45 @@
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
     body { background-color: #f8f9fa; color: #1a1a1a; display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 16px; }
-    .app-container { background: #ffffff; width: 100%; max-width: 850px; padding: 24px; border-radius: 16px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05); position: relative; }
-    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
-    .header h1 { font-size: 26px; font-weight: 700; color: #111; }
+    .app-container { background: #ffffff; width: 100%; max-width: 1000px; padding: 28px; border-radius: 16px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05); position: relative; }
+    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+    .header h1 { font-size: 28px; font-weight: 700; color: #111; }
     .header-actions { display: flex; gap: 10px; }
-    .icon-btn { background: #e9ecef; border: none; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: bold; transition: background 0.2s; }
+    .icon-btn { background: #e9ecef; border: none; width: 42px; height: 42px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: bold; transition: background 0.2s; }
     .icon-btn:hover { background: #dee2e6; }
-    .level-tabs { display: flex; gap: 8px; margin-bottom: 16px; }
-    .level-tab { flex: 1; padding: 10px 0; background: #f1f3f5; border: 2px solid transparent; border-radius: 8px; font-size: 14px; font-weight: 700; color: #495057; cursor: pointer; text-align: center; transition: all 0.2s; }
+    .level-tabs { display: flex; gap: 8px; margin-bottom: 20px; }
+    .level-tab { flex: 1; padding: 12px 0; background: #f1f3f5; border: 2px solid transparent; border-radius: 8px; font-size: 15px; font-weight: 700; color: #495057; cursor: pointer; text-align: center; transition: all 0.2s; }
     .level-tab:hover { background: #e9ecef; }
     .level-tab.active { background: #e7f5ff; border-color: #0d6efd; color: #0d6efd; }
     .message { text-align: center; font-size: 15px; font-weight: 600; min-height: 22px; margin-bottom: 16px; color: #dc3545; }
-    .main-layout { display: flex; gap: 20px; align-items: flex-start; margin-bottom: 20px; }
-    .grid-container { flex: 1; display: flex; justify-content: center; overflow-x: auto; }
-    .cw-grid { display: grid; gap: 2px; background: #333; padding: 2px; border-radius: 6px; width: 100%; max-width: 440px; aspect-ratio: 1; }
-    .cw-cell { background: #111; position: relative; display: flex; align-items: center; justify-content: center; user-select: none; }
+    .main-layout { display: flex; gap: 24px; align-items: flex-start; margin-bottom: 24px; }
+    .grid-container { flex: 1.2; display: flex; justify-content: center; overflow-x: auto; }
+    .cw-grid { display: grid; gap: 2px; background: #333; padding: 2px; border-radius: 8px; width: 100%; max-width: 520px; aspect-ratio: 1; }
+    .cw-cell { background: #111; position: relative; display: flex; align-items: center; justify-content: center; user-select: none; aspect-ratio: 1; min-width: 0; min-height: 0; overflow: hidden; }
     .cw-cell.active { background: #fff; cursor: pointer; }
     .cw-cell.word-highlight { background: #90caf9 !important; }
     .cw-cell.selected { background: #42a5f5 !important; }
-    .cw-cell.correct { background: #d4edda !important; color: #155724; }
-    .cw-num { position: absolute; top: 2px; left: 3px; font-size: 9px; font-weight: 700; color: #333; pointer-events: none; }
-    .cw-val { font-size: 16px; font-weight: 700; color: #111; text-transform: uppercase; }
-    .clues-container { flex: 1; display: flex; flex-direction: column; gap: 16px; background: #f1f3f5; padding: 16px; border-radius: 10px; height: 440px; overflow-y: auto; }
+    .cw-cell.cell-correct { background: #d4edda !important; color: #155724 !important; }
+    .cw-cell.cell-incorrect { background: #f8d7da !important; color: #721c24 !important; }
+    .cw-num { position: absolute; top: 2px; left: 3px; font-size: clamp(8px, 1.2vw, 10px); font-weight: 700; color: #333; pointer-events: none; line-height: 1; }
+    .cw-val { font-size: clamp(14px, 2.2vw, 20px); font-weight: 700; color: #111; text-transform: uppercase; line-height: 1; display: block; text-align: center; }
+    .clues-container { flex: 1; display: flex; flex-direction: column; gap: 16px; background: #f1f3f5; padding: 20px; border-radius: 12px; height: 520px; overflow-y: auto; }
     .clues-col { flex: 1; }
-    .clues-title { font-size: 14px; font-weight: 700; text-transform: uppercase; color: #495057; margin-bottom: 8px; border-bottom: 2px solid #ced4da; padding-bottom: 4px; }
-    .clue-item { font-size: 13px; margin-bottom: 6px; color: #212529; cursor: pointer; line-height: 1.4; padding: 4px 6px; border-radius: 4px; }
+    .clues-title { font-size: 15px; font-weight: 700; text-transform: uppercase; color: #495057; margin-bottom: 10px; border-bottom: 2px solid #ced4da; padding-bottom: 6px; }
+    .clue-item { font-size: 14px; margin-bottom: 8px; color: #212529; cursor: pointer; line-height: 1.4; padding: 6px 8px; border-radius: 6px; transition: background 0.2s, color 0.2s; font-weight: 400; }
     .clue-item:hover { background: #e9ecef; }
-    .clue-item.active { background: #0d6efd; color: #fff; font-weight: 600; }
+    .clue-item.active { background: #0d6efd; color: #fff; text-shadow: 0 0 0.4px #fff; }
+    .clue-item.clue-correct { background: #28a745 !important; color: #fff !important; text-shadow: 0 0 0.4px #fff; }
+    .clue-item.clue-incorrect { background: #dc3545 !important; color: #fff !important; text-shadow: 0 0 0.4px #fff; }
     .controls-row { display: flex; gap: 12px; }
-    .action-btn { flex: 1; padding: 12px 0; border: none; background: #e9ecef; border-radius: 8px; font-size: 14px; font-weight: 600; color: #111; cursor: pointer; transition: background 0.2s; }
+    .action-btn { flex: 1; padding: 14px 0; border: none; background: #e9ecef; border-radius: 8px; font-size: 16px; font-weight: 600; color: #111; cursor: pointer; transition: background 0.2s; }
     .action-btn:hover { background: #dee2e6; }
     .action-btn.primary { background: #0d6efd; color: #fff; }
     .action-btn.primary:hover { background: #0b5ed7; }
-    @media (max-width: 650px) { .main-layout { flex-direction: column; } .clues-container { width: 100%; height: 220px; } }
+    @media (max-width: 750px) { .main-layout { flex-direction: column; } .clues-container { width: 100%; height: 260px; } }
     .modal-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); border-radius: 16px; display: none; justify-content: center; align-items: center; z-index: 10; }
     .modal-overlay.open { display: flex; }
-    .modal-content { background: #ffffff; width: 90%; max-width: 400px; padding: 24px; border-radius: 12px; }
+    .modal-content { background: #ffffff; width: 90%; max-width: 420px; padding: 24px; border-radius: 12px; }
     .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
     .modal-title { font-size: 20px; font-weight: 700; }
     .close-btn { background: none; border: none; font-size: 24px; cursor: pointer; color: #6c757d; }
@@ -92,7 +95,7 @@
     </div>
 
     <div class="controls-row">
-      <button class="action-btn primary" id="check-btn">Check Puzzle</button>
+      <button class="action-btn primary" id="check-btn">Check</button>
     </div>
 
     <!-- Help Modal -->
@@ -109,7 +112,8 @@
             <li><strong>Level 2:</strong> 10 words</li>
             <li><strong>Level 3:</strong> 20 words</li>
             <li>Click a cell to select it. Click again to toggle between <strong>Across</strong> and <strong>Down</strong>.</li>
-            <li>Use your keyboard to enter letters and <strong>Check Puzzle</strong> when complete.</li>
+            <li>Use your keyboard to enter letters.</li>
+            <li>Press <strong>Check</strong> to evaluate full words—entire correct words turn green, incorrect full words turn red.</li>
           </ul>
         </div>
       </div>
@@ -504,7 +508,8 @@
     let selectedCell = { r: 0, c: 0 };
     let placedWords = [];
     let boardState = [];
-    let userInputs = [];
+    let userInputsByLevel = {};
+    let checkedStatusByLevel = {};
 
     function getTodaySeed() {
       const now = new Date();
@@ -548,11 +553,24 @@
       if (currentLevel === 1) poolSource = BANK_L1;
       if (currentLevel === 3) poolSource = BANK_L3;
 
-      const pool = [...poolSource].sort(() => rng() - 0.5);
+      const filteredPool = poolSource.filter(w => w.word.length <= GRID_SIZE - 2);
+      
+      const pool = [...filteredPool].map(w => ({ w, key: rng() }))
+                                    .sort((a, b) => a.key - b.key)
+                                    .map(item => item.w);
       
       boardState = Array(GRID_SIZE).fill(null).map(() => Array(GRID_SIZE).fill(null));
-      userInputs = Array(GRID_SIZE).fill(null).map(() => Array(GRID_SIZE).fill(''));
+      
+      if (!userInputsByLevel[currentLevel]) {
+        userInputsByLevel[currentLevel] = Array(GRID_SIZE).fill(null).map(() => Array(GRID_SIZE).fill(''));
+      }
+      if (!checkedStatusByLevel[currentLevel]) {
+        checkedStatusByLevel[currentLevel] = {};
+      }
+
       placedWords = [];
+
+      if (pool.length === 0) return;
 
       const first = pool.pop();
       const startR = Math.floor(GRID_SIZE / 2);
@@ -561,10 +579,7 @@
       for (let i = 0; i < first.word.length; i++) {
         boardState[startR][startC + i] = { char: first.word[i], num: null };
       }
-      placedWords.push({ word: first.word, clue: first.clue, r: startR, c: startC, dir: 'ACROSS', num: 1 });
-      boardState[startR][startC].num = 1;
-
-      let nextNum = 2;
+      placedWords.push({ word: first.word, clue: first.clue, r: startR, c: startC, dir: 'ACROSS', num: 0 });
 
       for (let w = 0; w < pool.length && placedWords.length < targetWordCount; w++) {
         const item = pool[w];
@@ -590,9 +605,8 @@
                 }
 
                 if (canPlaceWord(word, testR, testC, targetDir)) {
-                  placeWord(word, item.clue, testR, testC, targetDir, nextNum);
-                  placedWords.push({ word, clue: item.clue, r: testR, c: testC, dir: targetDir, num: nextNum });
-                  nextNum++;
+                  placeWordLetters(word, testR, testC, targetDir);
+                  placedWords.push({ word, clue: item.clue, r: testR, c: testC, dir: targetDir, num: 0 });
                   placed = true;
                 }
               }
@@ -601,10 +615,44 @@
         }
       }
 
+      renumberCrossword();
+
       if (placedWords.length > 0) {
         selectedCell = { r: placedWords[0].r, c: placedWords[0].c };
         currentDirection = placedWords[0].dir;
       }
+    }
+
+    function renumberCrossword() {
+      for (let r = 0; r < GRID_SIZE; r++) {
+        for (let c = 0; c < GRID_SIZE; c++) {
+          if (boardState[r][c]) {
+            boardState[r][c].num = null;
+          }
+        }
+      }
+
+      const startCells = [];
+      placedWords.forEach(w => {
+        if (!startCells.some(cell => cell.r === w.r && cell.c === w.c)) {
+          startCells.push({ r: w.r, c: w.c });
+        }
+      });
+
+      startCells.sort((a, b) => {
+        if (a.r !== b.r) return a.r - b.r;
+        return a.c - b.c;
+      });
+
+      startCells.forEach((cell, idx) => {
+        const num = idx + 1;
+        boardState[cell.r][cell.c].num = num;
+        placedWords.forEach(w => {
+          if (w.r === cell.r && w.c === cell.c) {
+            w.num = num;
+          }
+        });
+      });
     }
 
     function canPlaceWord(word, r, c, dir) {
@@ -640,15 +688,13 @@
       return true;
     }
 
-    function placeWord(word, clue, r, c, dir, num) {
+    function placeWordLetters(word, r, c, dir) {
       for (let i = 0; i < word.length; i++) {
         const currR = dir === 'ACROSS' ? r : r + i;
         const currC = dir === 'ACROSS' ? c + i : c;
         
         if (!boardState[currR][currC]) {
-          boardState[currR][currC] = { char: word[i], num: i === 0 ? num : null };
-        } else if (i === 0 && !boardState[currR][currC].num) {
-          boardState[currR][currC].num = num;
+          boardState[currR][currC] = { char: word[i], num: null };
         }
       }
     }
@@ -681,6 +727,26 @@
 
       const wordHighlightCells = getActiveWordCells();
 
+      const currentInputs = userInputsByLevel[currentLevel] || [];
+      const currentCheckedMap = checkedStatusByLevel[currentLevel] || {};
+
+      const cellStatusMap = {};
+      placedWords.forEach((w) => {
+        const statusKey = `${w.num}-${w.dir}`;
+        const status = currentCheckedMap[statusKey];
+        if (status === 'correct' || status === 'incorrect') {
+          for (let i = 0; i < w.word.length; i++) {
+            const r = w.dir === 'ACROSS' ? w.r : w.r + i;
+            const c = w.dir === 'ACROSS' ? w.c + i : w.c;
+            const cellKey = `${r}-${c}`;
+            
+            if (!cellStatusMap[cellKey] || status === 'incorrect') {
+              cellStatusMap[cellKey] = status;
+            }
+          }
+        }
+      });
+
       for (let r = 0; r < GRID_SIZE; r++) {
         for (let c = 0; c < GRID_SIZE; c++) {
           const cell = boardState[r][c];
@@ -698,7 +764,7 @@
 
             const valEl = document.createElement('span');
             valEl.className = 'cw-val';
-            valEl.textContent = userInputs[r][c];
+            valEl.textContent = currentInputs[r] ? currentInputs[r][c] : '';
             cellEl.appendChild(valEl);
 
             if (wordHighlightCells.some(cellPos => cellPos.r === r && cellPos.c === c)) {
@@ -707,6 +773,13 @@
 
             if (r === selectedCell.r && c === selectedCell.c) {
               cellEl.classList.add('selected');
+            }
+
+            const cellKey = `${r}-${c}`;
+            if (cellStatusMap[cellKey] === 'correct') {
+              cellEl.classList.add('cell-correct');
+            } else if (cellStatusMap[cellKey] === 'incorrect') {
+              cellEl.classList.add('cell-incorrect');
             }
 
             cellEl.addEventListener('click', () => {
@@ -725,6 +798,30 @@
       }
     }
 
+    function evaluateWordStatus(w) {
+      let isFullyFilled = true;
+      let isFullyCorrect = true;
+
+      const currentInputs = userInputsByLevel[currentLevel] || [];
+
+      for (let i = 0; i < w.word.length; i++) {
+        const r = w.dir === 'ACROSS' ? w.r : w.r + i;
+        const c = w.dir === 'ACROSS' ? w.c + i : w.c;
+        const val = currentInputs[r] ? currentInputs[r][c] : '';
+
+        if (val === '') {
+          isFullyFilled = false;
+          isFullyCorrect = false;
+        } else if (val !== w.word[i]) {
+          isFullyCorrect = false;
+        }
+      }
+
+      if (isFullyFilled && isFullyCorrect) return 'correct';
+      if (isFullyFilled && !isFullyCorrect) return 'incorrect';
+      return 'incomplete';
+    }
+
     function renderClues() {
       const acrossEl = document.getElementById('across-clues');
       const downEl = document.getElementById('down-clues');
@@ -740,11 +837,24 @@
         }
       });
 
-      placedWords.forEach(w => {
+      const currentCheckedMap = checkedStatusByLevel[currentLevel] || {};
+
+      const sortedWords = [...placedWords].sort((a, b) => a.num - b.num);
+
+      sortedWords.forEach(w => {
         const clueEl = document.createElement('div');
         clueEl.className = 'clue-item';
+        
         if (activeWord && activeWord.num === w.num && activeWord.dir === w.dir) {
           clueEl.classList.add('active');
+        }
+
+        const statusKey = `${w.num}-${w.dir}`;
+        const status = currentCheckedMap[statusKey];
+        if (status === 'correct') {
+          clueEl.classList.add('clue-correct');
+        } else if (status === 'incorrect') {
+          clueEl.classList.add('clue-incorrect');
         }
 
         clueEl.textContent = `${w.num}. ${w.clue}`;
@@ -763,6 +873,7 @@
     function handleKeyPress(e) {
       const key = e.key;
       const { r, c } = selectedCell;
+      const currentInputs = userInputsByLevel[currentLevel];
 
       if (key === 'ArrowUp') {
         e.preventDefault();
@@ -775,14 +886,14 @@
         if (c > 0 && boardState[r][c - 1]) selectedCell = { r, c: c - 1 };
       } else if (key === 'ArrowRight') {
         e.preventDefault();
-        if (c < GRID_SIZE - 1 && boardState[r][c + 1]) selectedCell = { r, c: c + 1 };
+        if (c < GRID_SIZE - 1 && boardState[r + 1] && boardState[r][c + 1]) selectedCell = { r, c: c + 1 };
       } else if (key === 'Backspace') {
         if (!boardState[r] || !boardState[r][c]) return;
-        userInputs[r][c] = '';
+        currentInputs[r][c] = '';
         moveSelection(-1);
       } else if (/^[a-zA-Z]$/.test(key)) {
         if (!boardState[r] || !boardState[r][c]) return;
-        userInputs[r][c] = key.toUpperCase();
+        currentInputs[r][c] = key.toUpperCase();
         moveSelection(1);
       }
 
@@ -834,12 +945,27 @@
 
     document.getElementById('check-btn').addEventListener('click', () => {
       let isWin = true;
+      let hasFilledAny = false;
+      
+      const currentCheckedMap = {};
+      const currentInputs = userInputsByLevel[currentLevel] || [];
+
+      placedWords.forEach(w => {
+        const status = evaluateWordStatus(w);
+        const statusKey = `${w.num}-${w.dir}`;
+        currentCheckedMap[statusKey] = status;
+
+        if (status !== 'correct') {
+          isWin = false;
+        }
+      });
+
+      checkedStatusByLevel[currentLevel] = currentCheckedMap;
+
       for (let r = 0; r < GRID_SIZE; r++) {
         for (let c = 0; c < GRID_SIZE; c++) {
-          if (boardState[r][c]) {
-            if (userInputs[r][c] !== boardState[r][c].char) {
-              isWin = false;
-            }
+          if (boardState[r][c] && currentInputs[r] && currentInputs[r][c] !== '') {
+            hasFilledAny = true;
           }
         }
       }
@@ -855,10 +981,15 @@
         stats.streak += 1;
         if (stats.streak > stats.maxStreak) stats.maxStreak = stats.streak;
         saveStats(stats);
-      } else {
+      } else if (!hasFilledAny) {
         msgEl.style.color = '#dc3545';
-        msgEl.textContent = "Some letters are incorrect or missing. Keep trying!";
+        msgEl.textContent = "Enter some letters into the grid before checking!";
+      } else {
+        msgEl.textContent = "";
       }
+
+      renderBoard();
+      renderClues();
     });
 
     document.getElementById('help-btn').addEventListener('click', () => document.getElementById('help-modal').classList.add('open'));
