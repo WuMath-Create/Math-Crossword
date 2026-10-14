@@ -25,15 +25,18 @@
     .cw-cell.active { background: #fff; cursor: pointer; }
     .cw-cell.word-highlight { background: #90caf9 !important; }
     .cw-cell.selected { background: #42a5f5 !important; }
-    .cw-cell.correct { background: #d4edda !important; color: #155724; }
+    .cw-cell.cell-correct { background: #d4edda !important; color: #155724 !important; }
+    .cw-cell.cell-incorrect { background: #f8d7da !important; color: #721c24 !important; }
     .cw-num { position: absolute; top: 2px; left: 3px; font-size: 9px; font-weight: 700; color: #333; pointer-events: none; }
     .cw-val { font-size: 16px; font-weight: 700; color: #111; text-transform: uppercase; }
     .clues-container { flex: 1; display: flex; flex-direction: column; gap: 16px; background: #f1f3f5; padding: 16px; border-radius: 10px; height: 440px; overflow-y: auto; }
     .clues-col { flex: 1; }
     .clues-title { font-size: 14px; font-weight: 700; text-transform: uppercase; color: #495057; margin-bottom: 8px; border-bottom: 2px solid #ced4da; padding-bottom: 4px; }
-    .clue-item { font-size: 13px; margin-bottom: 6px; color: #212529; cursor: pointer; line-height: 1.4; padding: 4px 6px; border-radius: 4px; }
+    .clue-item { font-size: 13px; margin-bottom: 6px; color: #212529; cursor: pointer; line-height: 1.4; padding: 4px 6px; border-radius: 4px; transition: background 0.2s, color 0.2s; }
     .clue-item:hover { background: #e9ecef; }
     .clue-item.active { background: #0d6efd; color: #fff; font-weight: 600; }
+    .clue-item.clue-correct { background: #28a745 !important; color: #fff !important; font-weight: 600; }
+    .clue-item.clue-incorrect { background: #dc3545 !important; color: #fff !important; font-weight: 600; }
     .controls-row { display: flex; gap: 12px; }
     .action-btn { flex: 1; padding: 12px 0; border: none; background: #e9ecef; border-radius: 8px; font-size: 14px; font-weight: 600; color: #111; cursor: pointer; transition: background 0.2s; }
     .action-btn:hover { background: #dee2e6; }
@@ -67,9 +70,9 @@
     </div>
 
     <div class="level-tabs">
-      <button class="level-tab" data-level="1">Level 1</button>
-      <button class="level-tab active" data-level="2">Level 2</button>
-      <button class="level-tab" data-level="3">Level 3</button>
+      <button class="level-tab" data-level="1">Level 1 (Easy)</button>
+      <button class="level-tab active" data-level="2">Level 2 (Med)</button>
+      <button class="level-tab" data-level="3">Level 3 (Hard)</button>
     </div>
 
     <div class="message" id="message"></div>
@@ -92,7 +95,7 @@
     </div>
 
     <div class="controls-row">
-      <button class="action-btn primary" id="check-btn">Check Puzzle</button>
+      <button class="action-btn primary" id="check-btn">Check</button>
     </div>
 
     <!-- Help Modal -->
@@ -105,11 +108,12 @@
         <div class="help-body">
           <p>Complete the daily crossword puzzle using CCSS math vocabulary words!</p>
           <ul>
-            <li><strong>Level 1:</strong> 5 words</li>
-            <li><strong>Level 2:</strong> 10 words</li>
-            <li><strong>Level 3:</strong> 20 words</li>
+            <li><strong>Level 1:</strong> 5 words (Kindergarten to 3rd Grade vocabulary).</li>
+            <li><strong>Level 2:</strong> 10 words (Kindergarten to 5th Grade vocabulary).</li>
+            <li><strong>Level 3:</strong> 20 words (All Grade Levels K through High School).</li>
             <li>Click a cell to select it. Click again to toggle between <strong>Across</strong> and <strong>Down</strong>.</li>
-            <li>Use your keyboard to enter letters and <strong>Check Puzzle</strong> when complete.</li>
+            <li>Use your keyboard to enter letters.</li>
+            <li>Press <strong>Check</strong> at any time to verify answers—correct letters and clues turn green, errors turn red.</li>
           </ul>
         </div>
       </div>
@@ -505,6 +509,7 @@
     let placedWords = [];
     let boardState = [];
     let userInputs = [];
+    let hasChecked = false;
 
     function getTodaySeed() {
       const now = new Date();
@@ -553,6 +558,7 @@
       boardState = Array(GRID_SIZE).fill(null).map(() => Array(GRID_SIZE).fill(null));
       userInputs = Array(GRID_SIZE).fill(null).map(() => Array(GRID_SIZE).fill(''));
       placedWords = [];
+      hasChecked = false;
 
       const first = pool.pop();
       const startR = Math.floor(GRID_SIZE / 2);
@@ -633,7 +639,7 @@
             if (currR < GRID_SIZE - 1 && boardState[currR + 1][currC] !== null) return false;
           } else {
             if (currC > 0 && boardState[currR][currC - 1] !== null) return false;
-            if (currC < GRID_SIZE - 1 && boardState[currR][currC + 1] !== null) return false;
+            if (currC < GRID_SIZE - 1 && boardState[currR + 1][currC] !== null) return false;
           }
         }
       }
@@ -709,6 +715,14 @@
               cellEl.classList.add('selected');
             }
 
+            if (hasChecked && userInputs[r][c] !== '') {
+              if (userInputs[r][c] === cell.char) {
+                cellEl.classList.add('cell-correct');
+              } else {
+                cellEl.classList.add('cell-incorrect');
+              }
+            }
+
             cellEl.addEventListener('click', () => {
               if (selectedCell.r === r && selectedCell.c === c) {
                 currentDirection = currentDirection === 'ACROSS' ? 'DOWN' : 'ACROSS';
@@ -723,6 +737,28 @@
           gridEl.appendChild(cellEl);
         }
       }
+    }
+
+    function checkWordStatus(w) {
+      let filled = true;
+      let correct = true;
+
+      for (let i = 0; i < w.word.length; i++) {
+        const r = w.dir === 'ACROSS' ? w.r : w.r + i;
+        const c = w.dir === 'ACROSS' ? w.c + i : w.c;
+        const val = userInputs[r][c];
+
+        if (val === '') {
+          filled = false;
+          correct = false;
+        } else if (val !== w.word[i]) {
+          correct = false;
+        }
+      }
+
+      if (correct) return 'correct';
+      if (filled && !correct) return 'incorrect';
+      return 'incomplete';
     }
 
     function renderClues() {
@@ -743,8 +779,18 @@
       placedWords.forEach(w => {
         const clueEl = document.createElement('div');
         clueEl.className = 'clue-item';
+        
         if (activeWord && activeWord.num === w.num && activeWord.dir === w.dir) {
           clueEl.classList.add('active');
+        }
+
+        if (hasChecked) {
+          const status = checkWordStatus(w);
+          if (status === 'correct') {
+            clueEl.classList.add('clue-correct');
+          } else if (status === 'incorrect') {
+            clueEl.classList.add('clue-incorrect');
+          }
         }
 
         clueEl.textContent = `${w.num}. ${w.clue}`;
@@ -833,10 +879,14 @@
     });
 
     document.getElementById('check-btn').addEventListener('click', () => {
+      hasChecked = true;
       let isWin = true;
+      let hasFilledAny = false;
+
       for (let r = 0; r < GRID_SIZE; r++) {
         for (let c = 0; c < GRID_SIZE; c++) {
           if (boardState[r][c]) {
+            if (userInputs[r][c] !== '') hasFilledAny = true;
             if (userInputs[r][c] !== boardState[r][c].char) {
               isWin = false;
             }
@@ -855,10 +905,15 @@
         stats.streak += 1;
         if (stats.streak > stats.maxStreak) stats.maxStreak = stats.streak;
         saveStats(stats);
-      } else {
+      } else if (!hasFilledAny) {
         msgEl.style.color = '#dc3545';
-        msgEl.textContent = "Some letters are incorrect or missing. Keep trying!";
+        msgEl.textContent = "Enter some letters into the grid before checking!";
+      } else {
+        msgEl.textContent = "";
       }
+
+      renderBoard();
+      renderClues();
     });
 
     document.getElementById('help-btn').addEventListener('click', () => document.getElementById('help-modal').classList.add('open'));
