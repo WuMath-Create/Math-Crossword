@@ -886,7 +886,7 @@
         if (c > 0 && boardState[r][c - 1]) selectedCell = { r, c: c - 1 };
       } else if (key === 'ArrowRight') {
         e.preventDefault();
-        if (c < GRID_SIZE - 1 && boardState[r + 1] && boardState[r][c + 1]) selectedCell = { r, c: c + 1 };
+        if (c < GRID_SIZE - 1 && boardState[r] && boardState[r][c + 1]) selectedCell = { r, c: c + 1 };
       } else if (key === 'Backspace') {
         if (!boardState[r] || !boardState[r][c]) return;
         currentInputs[r][c] = '';
