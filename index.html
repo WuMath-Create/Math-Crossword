@@ -568,6 +568,31 @@
     let checkedStatusByLevel = {};
     let completedLevelsToday = {};
 
+    function saveProgress() {
+      const todaySeed = getTodaySeed(0) - (currentLevel * 1000); // base date seed without level offset
+      const storageKey = `cw_math_saved_state_${todaySeed}`;
+      const stateToSave = {
+        userInputsByLevel,
+        checkedStatusByLevel
+      };
+      localStorage.setItem(storageKey, JSON.stringify(stateToSave));
+    }
+
+    function loadProgress() {
+      const todaySeed = getTodaySeed(0) - (currentLevel * 1000);
+      const storageKey = `cw_math_saved_state_${todaySeed}`;
+      const savedData = localStorage.getItem(storageKey);
+      if (savedData) {
+        try {
+          const parsed = JSON.parse(savedData);
+          if (parsed.userInputsByLevel) userInputsByLevel = parsed.userInputsByLevel;
+          if (parsed.checkedStatusByLevel) checkedStatusByLevel = parsed.checkedStatusByLevel;
+        } catch (e) {
+          console.error("Failed to load saved state", e);
+        }
+      }
+    }
+
     function getTodaySeed(offsetDays = 0) {
       const now = new Date();
       if (offsetDays !== 0) {
@@ -1112,10 +1137,12 @@
       } else if (key === 'Backspace') {
         if (!boardState[r] || !boardState[r][c]) return;
         currentInputs[r][c] = '';
+        saveProgress();
         moveSelection(-1);
       } else if (/^[a-zA-Z]$/.test(key)) {
         if (!boardState[r] || !boardState[r][c]) return;
         currentInputs[r][c] = key.toUpperCase();
+        saveProgress();
         moveSelection(1);
       }
 
@@ -1148,6 +1175,7 @@
         }
       });
 
+      saveProgress();
       renderBoard();
       renderClues();
 
@@ -1347,6 +1375,7 @@
     window.addEventListener('keydown', handleKeyPress);
 
     window.onload = function() {
+      loadProgress();
       generateDailyCrossword();
       renderBoard();
       renderClues();
