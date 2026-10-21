@@ -51,10 +51,19 @@
     .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
     .modal-title { font-size: 20px; font-weight: 700; }
     .close-btn { background: none; border: none; font-size: 24px; cursor: pointer; color: #6c757d; }
+    
+    /* Stats Modal Styles */
+    .stats-nav { display: flex; background: #e9ecef; border-radius: 8px; padding: 3px; margin-bottom: 16px; }
+    .stats-tab { flex: 1; padding: 6px 0; border: none; background: transparent; font-size: 12px; font-weight: 700; border-radius: 6px; cursor: pointer; color: #495057; }
+    .stats-tab.active { background: #ffffff; color: #0d6efd; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
     .stats-summary { display: flex; justify-content: space-between; margin-bottom: 20px; text-align: center; }
     .stat-box { flex: 1; }
-    .stat-val { font-size: 22px; font-weight: 700; }
-    .stat-lbl { font-size: 11px; color: #6c757d; text-transform: uppercase; }
+    .stat-val { font-size: 22px; font-weight: 700; color: #111; }
+    .stat-lbl { font-size: 10px; color: #6c757d; text-transform: uppercase; font-weight: 600; margin-top: 2px; }
+    .stats-details { background: #f8f9fa; border-radius: 8px; padding: 12px 16px; font-size: 13px; margin-top: 10px; }
+    .stats-row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px dashed #e9ecef; }
+    .stats-row:last-child { border-bottom: none; }
+    
     .help-body { font-size: 14px; line-height: 1.5; color: #333; }
     .help-body p { margin-bottom: 10px; }
     .help-body ul { margin-left: 20px; margin-bottom: 12px; }
@@ -140,7 +149,7 @@
             <li><strong>Level 3:</strong> 20 words</li>
             <li>Click a cell to select it. Click again to toggle between <strong>Across</strong> and <strong>Down</strong>.</li>
             <li>Use your keyboard to enter letters.</li>
-            <li>Press <strong>Check</strong> to evaluate full words—entire correct words turn green, incorrect full words turn red.</li>
+            <li>Press <strong>Check</strong> or hit <strong>Enter</strong> to evaluate full words—entire correct words turn green, incorrect full words turn red.</li>
           </ul>
         </div>
       </div>
@@ -153,6 +162,14 @@
           <div class="modal-title">STATISTICS</div>
           <button class="close-btn" id="close-stats">&times;</button>
         </div>
+
+        <div class="stats-nav">
+          <button class="stats-tab active" data-stats-view="all">ALL LEVELS</button>
+          <button class="stats-tab" data-stats-view="1">LEVEL 1</button>
+          <button class="stats-tab" data-stats-view="2">LEVEL 2</button>
+          <button class="stats-tab" data-stats-view="3">LEVEL 3</button>
+        </div>
+
         <div class="stats-summary">
           <div class="stat-box">
             <div class="stat-val" id="stat-played">0</div>
@@ -164,11 +181,22 @@
           </div>
           <div class="stat-box">
             <div class="stat-val" id="stat-streak">0</div>
-            <div class="stat-lbl">Streak</div>
+            <div class="stat-lbl">Current Streak</div>
           </div>
           <div class="stat-box">
             <div class="stat-val" id="stat-maxstreak">0</div>
             <div class="stat-lbl">Max Streak</div>
+          </div>
+        </div>
+
+        <div class="stats-details">
+          <div class="stats-row">
+            <span>Words Solved Correctly:</span>
+            <strong id="stat-words-solved">0</strong>
+          </div>
+          <div class="stats-row">
+            <span>Accuracy Rate (Checks):</span>
+            <strong id="stat-check-accuracy">0%</strong>
           </div>
         </div>
       </div>
@@ -529,6 +557,7 @@
     ];
 
     let currentLevel = 2;
+    let currentStatsFilter = 'all';
     let GRID_SIZE = 13;
     let targetWordCount = 10;
     let currentDirection = 'ACROSS';
@@ -537,6 +566,7 @@
     let boardState = [];
     let userInputsByLevel = {};
     let checkedStatusByLevel = {};
+    let completedLevelsToday = {};
 
     function getTodaySeed(offsetDays = 0) {
       const now = new Date();
@@ -1121,17 +1151,18 @@
       renderBoard();
       renderClues();
 
+      // Track granular check attempt stats
+      recordCheckAttempt(currentLevel, correctCount, placedWords.length);
+
       const msgEl = document.getElementById('message');
       if (correctCount === placedWords.length) {
         msgEl.style.color = '#28a745';
         msgEl.textContent = '🎉 Congratulations! You completed Level ' + currentLevel + '!';
         
-        const stats = getStats();
-        stats.played += 1;
-        stats.wins += 1;
-        stats.streak += 1;
-        if (stats.streak > stats.maxStreak) stats.maxStreak = stats.streak;
-        saveStats(stats);
+        if (!completedLevelsToday[currentLevel]) {
+          completedLevelsToday[currentLevel] = true;
+          recordLevelWin(currentLevel);
+        }
       } else {
         msgEl.style.color = '#dc3545';
         msgEl.textContent = `${correctCount} of ${placedWords.length} words correct! Keep going!`;
@@ -1139,21 +1170,70 @@
     }
 
     function getStats() {
-      const data = localStorage.getItem('cw_math_stats');
-      return data ? JSON.parse(data) : { played: 0, wins: 0, streak: 0, maxStreak: 0 };
+      const data = localStorage.getItem('cw_math_stats_v2');
+      if (data) {
+        return JSON.parse(data);
+      }
+      // Migration from old structure if present
+      const oldData = localStorage.getItem('cw_math_stats');
+      const base = oldData ? JSON.parse(oldData) : {};
+      
+      return {
+        all: { played: base.played || 0, wins: base.wins || 0, streak: base.streak || 0, maxStreak: base.maxStreak || 0, wordsSolved: 0, totalChecks: 0, correctChecks: 0 },
+        1: { played: 0, wins: 0, streak: 0, maxStreak: 0, wordsSolved: 0, totalChecks: 0, correctChecks: 0 },
+        2: { played: base.played || 0, wins: base.wins || 0, streak: base.streak || 0, maxStreak: base.maxStreak || 0, wordsSolved: 0, totalChecks: 0, correctChecks: 0 },
+        3: { played: 0, wins: 0, streak: 0, maxStreak: 0, wordsSolved: 0, totalChecks: 0, correctChecks: 0 }
+      };
     }
 
     function saveStats(stats) {
-      localStorage.setItem('cw_math_stats', JSON.stringify(stats));
+      localStorage.setItem('cw_math_stats_v2', JSON.stringify(stats));
+    }
+
+    function recordLevelWin(level) {
+      const stats = getStats();
+      
+      ['all', level].forEach(key => {
+        const target = stats[key];
+        target.played += 1;
+        target.wins += 1;
+        target.streak += 1;
+        if (target.streak > target.maxStreak) target.maxStreak = target.streak;
+      });
+
+      saveStats(stats);
+    }
+
+    function recordCheckAttempt(level, correctWordsCount, totalWords) {
+      const stats = getStats();
+      ['all', level].forEach(key => {
+        const target = stats[key];
+        target.totalChecks += totalWords;
+        target.correctChecks += correctWordsCount;
+        
+        // Update total solved words unique count estimation
+        if (correctWordsCount > target.wordsSolved) {
+          target.wordsSolved += (correctWordsCount - (target.lastSolved || 0));
+        }
+        target.lastSolved = correctWordsCount;
+      });
+      saveStats(stats);
     }
 
     function renderStats() {
       const stats = getStats();
-      document.getElementById('stat-played').textContent = stats.played;
-      const rate = stats.played > 0 ? Math.round((stats.wins / stats.played) * 100) : 0;
-      document.getElementById('stat-winrate').textContent = `${rate}%`;
-      document.getElementById('stat-streak').textContent = stats.streak;
-      document.getElementById('stat-maxstreak').textContent = stats.maxStreak;
+      const currentData = stats[currentStatsFilter] || stats['all'];
+
+      document.getElementById('stat-played').textContent = currentData.played;
+      const winRate = currentData.played > 0 ? Math.round((currentData.wins / currentData.played) * 100) : 0;
+      document.getElementById('stat-winrate').textContent = `${winRate}%`;
+      document.getElementById('stat-streak').textContent = currentData.streak;
+      document.getElementById('stat-maxstreak').textContent = currentData.maxStreak;
+
+      document.getElementById('stat-words-solved').textContent = currentData.wordsSolved || 0;
+      
+      const checkAccuracy = currentData.totalChecks > 0 ? Math.round((currentData.correctChecks / currentData.totalChecks) * 100) : 0;
+      document.getElementById('stat-check-accuracy').textContent = `${checkAccuracy}%`;
     }
 
     function renderYesterdayAnswers() {
@@ -1227,6 +1307,15 @@
         generateDailyCrossword();
         renderBoard();
         renderClues();
+      });
+    });
+
+    document.querySelectorAll('.stats-tab').forEach(tab => {
+      tab.addEventListener('click', (e) => {
+        document.querySelectorAll('.stats-tab').forEach(t => t.classList.remove('active'));
+        e.target.classList.add('active');
+        currentStatsFilter = e.target.getAttribute('data-stats-view');
+        renderStats();
       });
     });
 
