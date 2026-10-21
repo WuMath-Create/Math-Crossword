@@ -11,6 +11,8 @@
     .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
     .header h1 { font-size: 28px; font-weight: 700; color: #111; }
     .header-actions { display: flex; gap: 10px; }
+    .btn-yesterday { background: #e9ecef; border: none; padding: 0 14px; height: 42px; border-radius: 21px; cursor: pointer; font-size: 14px; font-weight: 600; color: #333; display: flex; align-items: center; gap: 6px; transition: background 0.2s; }
+    .btn-yesterday:hover { background: #dee2e6; }
     .icon-btn { background: #e9ecef; border: none; width: 42px; height: 42px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: bold; transition: background 0.2s; }
     .icon-btn:hover { background: #dee2e6; }
     .level-tabs { display: flex; gap: 8px; margin-bottom: 20px; }
@@ -45,7 +47,7 @@
     @media (max-width: 750px) { .main-layout { flex-direction: column; } .clues-container { width: 100%; height: 260px; } }
     .modal-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); border-radius: 16px; display: none; justify-content: center; align-items: center; z-index: 10; }
     .modal-overlay.open { display: flex; }
-    .modal-content { background: #ffffff; width: 90%; max-width: 420px; padding: 24px; border-radius: 12px; }
+    .modal-content { background: #ffffff; width: 90%; max-width: 500px; padding: 24px; border-radius: 12px; max-height: 85vh; display: flex; flex-direction: column; }
     .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
     .modal-title { font-size: 20px; font-weight: 700; }
     .close-btn { background: none; border: none; font-size: 24px; cursor: pointer; color: #6c757d; }
@@ -56,12 +58,24 @@
     .help-body { font-size: 14px; line-height: 1.5; color: #333; }
     .help-body p { margin-bottom: 10px; }
     .help-body ul { margin-left: 20px; margin-bottom: 12px; }
+    .answers-scroll { overflow-y: auto; padding-right: 8px; flex: 1; }
+    .ans-level-sec { margin-bottom: 16px; background: #f8f9fa; padding: 12px; border-radius: 8px; }
+    .ans-level-title { font-weight: 700; font-size: 16px; margin-bottom: 8px; color: #0d6efd; border-bottom: 1px solid #dee2e6; padding-bottom: 4px; }
+    .ans-dir-title { font-weight: 700; font-size: 13px; text-transform: uppercase; color: #495057; margin: 8px 0 4px 0; }
+    .ans-list { font-size: 13px; line-height: 1.5; color: #333; }
+    .ans-item { margin-bottom: 6px; padding-bottom: 4px; border-bottom: 1px dashed #e9ecef; }
+    .ans-item:last-child { border-bottom: none; }
+    .ans-item strong { color: #111; font-weight: 700; }
+    .ans-word-badge { display: inline-block; background: #28a745; color: #fff; padding: 1px 6px; border-radius: 4px; font-weight: 700; font-size: 12px; margin-left: 4px; letter-spacing: 0.5px; }
   </style>
 </head>
 <body>
 
   <div class="app-container">
     <div class="header">
+      <button class="btn-yesterday" id="yesterday-btn" title="View Yesterday's Solutions">
+        <span>⏮️</span> Yesterday's Answers
+      </button>
       <h1>Math Crossword</h1>
       <div class="header-actions">
         <button class="icon-btn" id="help-btn" title="How to Play">?</button>
@@ -96,6 +110,19 @@
 
     <div class="controls-row">
       <button class="action-btn primary" id="check-btn">Check</button>
+    </div>
+
+    <!-- Yesterday Answers Modal -->
+    <div class="modal-overlay" id="yesterday-modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <div class="modal-title">YESTERDAY'S ANSWERS</div>
+          <button class="close-btn" id="close-yesterday">&times;</button>
+        </div>
+        <div class="answers-scroll" id="yesterday-answers-content">
+          <!-- Dynamically populated -->
+        </div>
+      </div>
     </div>
 
     <!-- Help Modal -->
@@ -511,8 +538,11 @@
     let userInputsByLevel = {};
     let checkedStatusByLevel = {};
 
-    function getTodaySeed() {
+    function getTodaySeed(offsetDays = 0) {
       const now = new Date();
+      if (offsetDays !== 0) {
+        now.setDate(now.getDate() + offsetDays);
+      }
       const estStr = now.toLocaleDateString('en-US', {
         timeZone: 'America/New_York',
         year: 'numeric',
@@ -521,6 +551,21 @@
       });
       const [m, d, y] = estStr.split('/');
       return parseInt(`${y}${m}${d}`, 10) + (currentLevel * 1000);
+    }
+
+    function getSpecificSeedForLevel(level, offsetDays = 0) {
+      const now = new Date();
+      if (offsetDays !== 0) {
+        now.setDate(now.getDate() + offsetDays);
+      }
+      const estStr = now.toLocaleDateString('en-US', {
+        timeZone: 'America/New_York',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+      });
+      const [m, d, y] = estStr.split('/');
+      return parseInt(`${y}${m}${d}`, 10) + (level * 1000);
     }
 
     function createRandom(seed) {
@@ -553,7 +598,11 @@
       if (currentLevel === 1) poolSource = BANK_L1;
       if (currentLevel === 3) poolSource = BANK_L3;
 
-      const filteredPool = poolSource.filter(w => w.word.length <= GRID_SIZE - 2);
+      const uniquePoolSource = poolSource.filter((item, index, self) =>
+        index === self.findIndex((t) => t.word === item.word)
+      );
+
+      const filteredPool = uniquePoolSource.filter(w => w.word.length <= GRID_SIZE - 2);
       
       const pool = [...filteredPool].map(w => ({ w, key: rng() }))
                                     .sort((a, b) => a.key - b.key)
@@ -620,6 +669,145 @@
       if (placedWords.length > 0) {
         selectedCell = { r: placedWords[0].r, c: placedWords[0].c };
         currentDirection = placedWords[0].dir;
+      }
+    }
+
+    function generatePuzzleForYesterday(level) {
+      let gSize = 13;
+      let tCount = 10;
+      if (level === 1) { gSize = 11; tCount = 5; }
+      if (level === 3) { gSize = 15; tCount = 20; }
+
+      const seed = getSpecificSeedForLevel(level, -1);
+      const rng = createRandom(seed);
+
+      let poolSource = BANK_L2;
+      if (level === 1) poolSource = BANK_L1;
+      if (level === 3) poolSource = BANK_L3;
+
+      const uniquePoolSource = poolSource.filter((item, index, self) =>
+        index === self.findIndex((t) => t.word === item.word)
+      );
+
+      const filteredPool = uniquePoolSource.filter(w => w.word.length <= gSize - 2);
+      
+      const pool = [...filteredPool].map(w => ({ w, key: rng() }))
+                                    .sort((a, b) => a.key - b.key)
+                                    .map(item => item.w);
+
+      const tempBoard = Array(gSize).fill(null).map(() => Array(gSize).fill(null));
+      const tempPlaced = [];
+
+      if (pool.length === 0) return [];
+
+      const first = pool.pop();
+      const startR = Math.floor(gSize / 2);
+      const startC = Math.max(1, Math.floor((gSize - first.word.length) / 2));
+      
+      for (let i = 0; i < first.word.length; i++) {
+        tempBoard[startR][startC + i] = { char: first.word[i], num: null };
+      }
+      tempPlaced.push({ word: first.word, clue: first.clue, r: startR, c: startC, dir: 'ACROSS', num: 0 });
+
+      for (let w = 0; w < pool.length && tempPlaced.length < tCount; w++) {
+        const item = pool[w];
+        const word = item.word;
+        let placed = false;
+
+        for (let pIdx = 0; pIdx < tempPlaced.length && !placed; pIdx++) {
+          const pWord = tempPlaced[pIdx];
+          
+          for (let i = 0; i < word.length && !placed; i++) {
+            for (let j = 0; j < pWord.word.length && !placed; j++) {
+              if (word[i] === pWord.word[j]) {
+                const targetDir = pWord.dir === 'ACROSS' ? 'DOWN' : 'ACROSS';
+                let testR = pWord.r;
+                let testC = pWord.c;
+
+                if (pWord.dir === 'ACROSS') {
+                  testC = pWord.c + j;
+                  testR = pWord.r - i;
+                } else {
+                  testR = pWord.r + j;
+                  testC = pWord.c - i;
+                }
+
+                if (canPlaceWordCustom(word, testR, testC, targetDir, tempBoard, gSize)) {
+                  placeWordLettersCustom(word, testR, testC, targetDir, tempBoard);
+                  tempPlaced.push({ word, clue: item.clue, r: testR, c: testC, dir: targetDir, num: 0 });
+                  placed = true;
+                }
+              }
+            }
+          }
+        }
+      }
+
+      const startCells = [];
+      tempPlaced.forEach(w => {
+        if (!startCells.some(cell => cell.r === w.r && cell.c === w.c)) {
+          startCells.push({ r: w.r, c: w.c });
+        }
+      });
+
+      startCells.sort((a, b) => {
+        if (a.r !== b.r) return a.r - b.r;
+        return a.c - b.c;
+      });
+
+      startCells.forEach((cell, idx) => {
+        const num = idx + 1;
+        tempPlaced.forEach(w => {
+          if (w.r === cell.r && w.c === cell.c) {
+            w.num = num;
+          }
+        });
+      });
+
+      return tempPlaced.sort((a, b) => a.num - b.num);
+    }
+
+    function canPlaceWordCustom(word, r, c, dir, board, gSize) {
+      if (r < 0 || c < 0) return false;
+      if (dir === 'ACROSS' && c + word.length > gSize) return false;
+      if (dir === 'DOWN' && r + word.length > gSize) return false;
+
+      if (dir === 'ACROSS') {
+        if (c > 0 && board[r][c - 1] !== null) return false;
+        if (c + word.length < gSize && board[r][c + word.length] !== null) return false;
+      } else {
+        if (r > 0 && board[r - 1][c] !== null) return false;
+        if (r + word.length < gSize && board[r + word.length][c] !== null) return false;
+      }
+
+      for (let i = 0; i < word.length; i++) {
+        const currR = dir === 'ACROSS' ? r : r + i;
+        const currC = dir === 'ACROSS' ? c + i : c;
+        const cell = board[currR][currC];
+
+        if (cell !== null) {
+          if (cell.char !== word[i]) return false;
+        } else {
+          if (dir === 'ACROSS') {
+            if (currR > 0 && board[currR - 1][currC] !== null) return false;
+            if (currR < gSize - 1 && board[currR + 1][currC] !== null) return false;
+          } else {
+            if (currC > 0 && board[currR][currC - 1] !== null) return false;
+            if (currC < gSize - 1 && board[currR][currC + 1] !== null) return false;
+          }
+        }
+      }
+      return true;
+    }
+
+    function placeWordLettersCustom(word, r, c, dir, board) {
+      for (let i = 0; i < word.length; i++) {
+        const currR = dir === 'ACROSS' ? r : r + i;
+        const currC = dir === 'ACROSS' ? c + i : c;
+        
+        if (!board[currR][currC]) {
+          board[currR][currC] = { char: word[i], num: null };
+        }
       }
     }
 
@@ -726,7 +914,6 @@
       gridEl.innerHTML = '';
 
       const wordHighlightCells = getActiveWordCells();
-
       const currentInputs = userInputsByLevel[currentLevel] || [];
       const currentCheckedMap = checkedStatusByLevel[currentLevel] || {};
 
@@ -838,7 +1025,6 @@
       });
 
       const currentCheckedMap = checkedStatusByLevel[currentLevel] || {};
-
       const sortedWords = [...placedWords].sort((a, b) => a.num - b.num);
 
       sortedWords.forEach(w => {
@@ -874,6 +1060,12 @@
       const key = e.key;
       const { r, c } = selectedCell;
       const currentInputs = userInputsByLevel[currentLevel];
+
+      if (key === 'Enter') {
+        e.preventDefault();
+        checkAnswers();
+        return;
+      }
 
       if (key === 'ArrowUp') {
         e.preventDefault();
@@ -913,6 +1105,39 @@
       }
     }
 
+    function checkAnswers() {
+      const currentCheckedMap = checkedStatusByLevel[currentLevel];
+      let correctCount = 0;
+
+      placedWords.forEach(w => {
+        const statusKey = `${w.num}-${w.dir}`;
+        const status = evaluateWordStatus(w);
+        currentCheckedMap[statusKey] = status;
+        if (status === 'correct') {
+          correctCount++;
+        }
+      });
+
+      renderBoard();
+      renderClues();
+
+      const msgEl = document.getElementById('message');
+      if (correctCount === placedWords.length) {
+        msgEl.style.color = '#28a745';
+        msgEl.textContent = '🎉 Congratulations! You completed Level ' + currentLevel + '!';
+        
+        const stats = getStats();
+        stats.played += 1;
+        stats.wins += 1;
+        stats.streak += 1;
+        if (stats.streak > stats.maxStreak) stats.maxStreak = stats.streak;
+        saveStats(stats);
+      } else {
+        msgEl.style.color = '#dc3545';
+        msgEl.textContent = `${correctCount} of ${placedWords.length} words correct! Keep going!`;
+      }
+    }
+
     function getStats() {
       const data = localStorage.getItem('cw_math_stats');
       return data ? JSON.parse(data) : { played: 0, wins: 0, streak: 0, maxStreak: 0 };
@@ -931,6 +1156,68 @@
       document.getElementById('stat-maxstreak').textContent = stats.maxStreak;
     }
 
+    function renderYesterdayAnswers() {
+      const container = document.getElementById('yesterday-answers-content');
+      container.innerHTML = '';
+
+      [1, 2, 3].forEach(level => {
+        const words = generatePuzzleForYesterday(level);
+        const secEl = document.createElement('div');
+        secEl.className = 'ans-level-sec';
+
+        const titleEl = document.createElement('div');
+        titleEl.className = 'ans-level-title';
+        titleEl.textContent = `Level ${level}`;
+        secEl.appendChild(titleEl);
+
+        if (words.length === 0) {
+          const noWords = document.createElement('div');
+          noWords.className = 'ans-list';
+          noWords.textContent = 'No puzzle generated for yesterday.';
+          secEl.appendChild(noWords);
+        } else {
+          const acrossWords = words.filter(w => w.dir === 'ACROSS');
+          const downWords = words.filter(w => w.dir === 'DOWN');
+
+          if (acrossWords.length > 0) {
+            const dirTitle = document.createElement('div');
+            dirTitle.className = 'ans-dir-title';
+            dirTitle.textContent = 'Across';
+            secEl.appendChild(dirTitle);
+
+            const listEl = document.createElement('div');
+            listEl.className = 'ans-list';
+            acrossWords.forEach(w => {
+              const itemEl = document.createElement('div');
+              itemEl.className = 'ans-item';
+              itemEl.innerHTML = `<strong>${w.num}.</strong> ${w.clue} <span class="ans-word-badge">${w.word}</span>`;
+              listEl.appendChild(itemEl);
+            });
+            secEl.appendChild(listEl);
+          }
+
+          if (downWords.length > 0) {
+            const dirTitle = document.createElement('div');
+            dirTitle.className = 'ans-dir-title';
+            dirTitle.textContent = 'Down';
+            secEl.appendChild(dirTitle);
+
+            const listEl = document.createElement('div');
+            listEl.className = 'ans-list';
+            downWords.forEach(w => {
+              const itemEl = document.createElement('div');
+              itemEl.className = 'ans-item';
+              itemEl.innerHTML = `<strong>${w.num}.</strong> ${w.clue} <span class="ans-word-badge">${w.word}</span>`;
+              listEl.appendChild(itemEl);
+            });
+            secEl.appendChild(listEl);
+          }
+        }
+
+        container.appendChild(secEl);
+      });
+    }
+
     document.querySelectorAll('.level-tab').forEach(tab => {
       tab.addEventListener('click', (e) => {
         document.querySelectorAll('.level-tab').forEach(t => t.classList.remove('active'));
@@ -943,65 +1230,38 @@
       });
     });
 
-    document.getElementById('check-btn').addEventListener('click', () => {
-      let isWin = true;
-      let hasFilledAny = false;
-      
-      const currentCheckedMap = {};
-      const currentInputs = userInputsByLevel[currentLevel] || [];
+    document.getElementById('check-btn').addEventListener('click', checkAnswers);
 
-      placedWords.forEach(w => {
-        const status = evaluateWordStatus(w);
-        const statusKey = `${w.num}-${w.dir}`;
-        currentCheckedMap[statusKey] = status;
-
-        if (status !== 'correct') {
-          isWin = false;
-        }
-      });
-
-      checkedStatusByLevel[currentLevel] = currentCheckedMap;
-
-      for (let r = 0; r < GRID_SIZE; r++) {
-        for (let c = 0; c < GRID_SIZE; c++) {
-          if (boardState[r][c] && currentInputs[r] && currentInputs[r][c] !== '') {
-            hasFilledAny = true;
-          }
-        }
-      }
-
-      const msgEl = document.getElementById('message');
-      const stats = getStats();
-
-      if (isWin) {
-        msgEl.style.color = '#28a745';
-        msgEl.textContent = "🎉 Outstanding! You solved the daily crossword!";
-        stats.played += 1;
-        stats.wins += 1;
-        stats.streak += 1;
-        if (stats.streak > stats.maxStreak) stats.maxStreak = stats.streak;
-        saveStats(stats);
-      } else if (!hasFilledAny) {
-        msgEl.style.color = '#dc3545';
-        msgEl.textContent = "Enter some letters into the grid before checking!";
-      } else {
-        msgEl.textContent = "";
-      }
-
-      renderBoard();
-      renderClues();
+    document.getElementById('yesterday-btn').addEventListener('click', () => {
+      renderYesterdayAnswers();
+      document.getElementById('yesterday-modal').classList.add('open');
+    });
+    document.getElementById('close-yesterday').addEventListener('click', () => {
+      document.getElementById('yesterday-modal').classList.remove('open');
     });
 
-    document.getElementById('help-btn').addEventListener('click', () => document.getElementById('help-modal').classList.add('open'));
-    document.getElementById('close-help').addEventListener('click', () => document.getElementById('help-modal').classList.remove('open'));
-    document.getElementById('stats-btn').addEventListener('click', () => { renderStats(); document.getElementById('stats-modal').classList.add('open'); });
-    document.getElementById('close-stats').addEventListener('click', () => document.getElementById('stats-modal').classList.remove('open'));
+    document.getElementById('help-btn').addEventListener('click', () => {
+      document.getElementById('help-modal').classList.add('open');
+    });
+    document.getElementById('close-help').addEventListener('click', () => {
+      document.getElementById('help-modal').classList.remove('open');
+    });
 
-    document.addEventListener('keydown', handleKeyPress);
+    document.getElementById('stats-btn').addEventListener('click', () => {
+      renderStats();
+      document.getElementById('stats-modal').classList.add('open');
+    });
+    document.getElementById('close-stats').addEventListener('click', () => {
+      document.getElementById('stats-modal').classList.remove('open');
+    });
 
-    generateDailyCrossword();
-    renderBoard();
-    renderClues();
+    window.addEventListener('keydown', handleKeyPress);
+
+    window.onload = function() {
+      generateDailyCrossword();
+      renderBoard();
+      renderClues();
+    };
   </script>
 </body>
 </html>
