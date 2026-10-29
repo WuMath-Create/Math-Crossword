@@ -52,7 +52,6 @@
     .modal-title { font-size: 20px; font-weight: 700; }
     .close-btn { background: none; border: none; font-size: 24px; cursor: pointer; color: #6c757d; }
     
-    /* Stats Modal Styles */
     .stats-nav { display: flex; background: #e9ecef; border-radius: 8px; padding: 3px; margin-bottom: 16px; }
     .stats-tab { flex: 1; padding: 6px 0; border: none; background: transparent; font-size: 12px; font-weight: 700; border-radius: 6px; cursor: pointer; color: #495057; }
     .stats-tab.active { background: #ffffff; color: #0d6efd; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
@@ -93,12 +92,12 @@
     </div>
 
     <div class="level-tabs">
-      <button class="level-tab" data-level="1">Level 1</button>
-      <button class="level-tab active" data-level="2">Level 2</button>
-      <button class="level-tab" data-level="3">Level 3</button>
+      <button class="level-tab" data-level="1">Level 1 (5 Words)</button>
+      <button class="level-tab active" data-level="2">Level 2 (10 Words)</button>
+      <button class="level-tab" data-level="3">Level 3 (20 Words)</button>
     </div>
 
-    <div class="message" id="message"></div>
+    <div class="message" id="message">Loading Word Bank...</div>
 
     <div class="main-layout">
       <div class="grid-container">
@@ -121,20 +120,16 @@
       <button class="action-btn primary" id="check-btn">Check</button>
     </div>
 
-    <!-- Yesterday Answers Modal -->
     <div class="modal-overlay" id="yesterday-modal">
       <div class="modal-content">
         <div class="modal-header">
           <div class="modal-title">YESTERDAY'S ANSWERS</div>
           <button class="close-btn" id="close-yesterday">&times;</button>
         </div>
-        <div class="answers-scroll" id="yesterday-answers-content">
-          <!-- Dynamically populated -->
-        </div>
+        <div class="answers-scroll" id="yesterday-answers-content"></div>
       </div>
     </div>
 
-    <!-- Help Modal -->
     <div class="modal-overlay" id="help-modal">
       <div class="modal-content">
         <div class="modal-header">
@@ -142,20 +137,19 @@
           <button class="close-btn" id="close-help">&times;</button>
         </div>
         <div class="help-body">
-          <p>Complete the daily crossword puzzle using CCSS math vocabulary words!</p>
+          <p>Complete the daily crossword puzzle using math vocabulary words loaded directly from Google Sheets!</p>
           <ul>
             <li><strong>Level 1:</strong> 5 words</li>
             <li><strong>Level 2:</strong> 10 words</li>
             <li><strong>Level 3:</strong> 20 words</li>
             <li>Click a cell to select it. Click again to toggle between <strong>Across</strong> and <strong>Down</strong>.</li>
             <li>Use your keyboard to enter letters.</li>
-            <li>Press <strong>Check</strong> or hit <strong>Enter</strong> to evaluate full words—entire correct words turn green, incorrect full words turn red.</li>
+            <li>Press <strong>Check</strong> or hit <strong>Enter</strong> to evaluate full words.</li>
           </ul>
         </div>
       </div>
     </div>
 
-    <!-- Stats Modal -->
     <div class="modal-overlay" id="stats-modal">
       <div class="modal-content">
         <div class="modal-header">
@@ -171,391 +165,25 @@
         </div>
 
         <div class="stats-summary">
-          <div class="stat-box">
-            <div class="stat-val" id="stat-played">0</div>
-            <div class="stat-lbl">Played</div>
-          </div>
-          <div class="stat-box">
-            <div class="stat-val" id="stat-winrate">0%</div>
-            <div class="stat-lbl">Win %</div>
-          </div>
-          <div class="stat-box">
-            <div class="stat-val" id="stat-streak">0</div>
-            <div class="stat-lbl">Current Streak</div>
-          </div>
-          <div class="stat-box">
-            <div class="stat-val" id="stat-maxstreak">0</div>
-            <div class="stat-lbl">Max Streak</div>
-          </div>
+          <div class="stat-box"><div class="stat-val" id="stat-played">0</div><div class="stat-lbl">Played</div></div>
+          <div class="stat-box"><div class="stat-val" id="stat-winrate">0%</div><div class="stat-lbl">Win %</div></div>
+          <div class="stat-box"><div class="stat-val" id="stat-streak">0</div><div class="stat-lbl">Current Streak</div></div>
+          <div class="stat-box"><div class="stat-val" id="stat-maxstreak">0</div><div class="stat-lbl">Max Streak</div></div>
         </div>
 
         <div class="stats-details">
-          <div class="stats-row">
-            <span>Words Solved Correctly:</span>
-            <strong id="stat-words-solved">0</strong>
-          </div>
-          <div class="stats-row">
-            <span>Accuracy Rate (Checks):</span>
-            <strong id="stat-check-accuracy">0%</strong>
-          </div>
+          <div class="stats-row"><span>Words Solved Correctly:</span><strong id="stat-words-solved">0</strong></div>
+          <div class="stats-row"><span>Accuracy Rate (Checks):</span><strong id="stat-check-accuracy">0%</strong></div>
         </div>
       </div>
     </div>
   </div>
 
   <script>
-    // K - 3rd Grade Vocabulary
-    const BANK_L1 = [
-      { word: "ABOVE", clue: "A preposition indicating a higher location." },
-      { word: "ADD", clue: "To combine or put together two or more quantities." },
-      { word: "ADDEND", clue: "Any number being added in an addition problem." },
-      { word: "ALIKE", clue: "Having similar size, quantity, or amount." },
-      { word: "AND", clue: "To combine or put together quantities; plus." },
-      { word: "ANGLE", clue: "A shape formed by two rays sharing a common endpoint." },
-      { word: "ARRAY", clue: "An arrangement of objects in equal rows and columns." },
-      { word: "ATTRIBUTE", clue: "A characteristic of an object such as shape, size, or color." },
-      { word: "BEHIND", clue: "A preposition indicating location at the back of an object." },
-      { word: "BELOW", clue: "A preposition indicating a lower location." },
-      { word: "BESIDE", clue: "A preposition indicating location next to an object." },
-      { word: "BETWEEN", clue: "A preposition indicating location in the middle of two objects." },
-      { word: "BIGGER", clue: "Larger in physical size." },
-      { word: "CAPACITY", clue: "The maximum amount that something can contain." },
-      { word: "CATEGORY", clue: "A collection of things sharing a common attribute." },
-      { word: "CENT", clue: "A monetary unit equal to 1/100th of a dollar." },
-      { word: "CENTIMETER", clue: "A metric unit of length equal to 1/100th of a meter." },
-      { word: "CIRCLE", clue: "A round 2D shape with no straight sides and no vertices." },
-      { word: "CLASSIFY", clue: "To sort or organize into groups by shared attribute." },
-      { word: "CLOSEDSHAPE", clue: "A 2D shape with no gaps that starts and ends at the same point." },
-      { word: "COLUMN", clue: "A vertical alignment of numbers or objects." },
-      { word: "COMPARE", clue: "To decide if quantities are greater than, less than, or equal." },
-      { word: "COMPOSE", clue: "To put together basic numbers or geometric shapes." },
-      { word: "CONE", clue: "A 3D solid with a circular base and one vertex." },
-      { word: "COUNT", clue: "To name numbers in order to find total quantity." },
-      { word: "COUNTON", clue: "A counting strategy used to add by counting forward." },
-      { word: "CUBE", clue: "A 3D solid shape with six congruent square faces." },
-      { word: "CURVE", clue: "A continuous line that is rounded rather than straight." },
-      { word: "CYLINDER", clue: "A 3D solid with two circular bases and a curved surface." },
-      { word: "DATA", clue: "A collected set of information or values." },
-      { word: "DAY", clue: "A unit of time equal to 24 hours." },
-      { word: "DECOMPOSE", clue: "To break down numbers or shapes into simpler parts." },
-      { word: "DIFFERENCE", clue: "The numerical result obtained when subtracting." },
-      { word: "DIGIT", clue: "Any individual symbol from 0 through 9." },
-      { word: "DIME", clue: "A coin worth 10 cents." },
-      { word: "DOLLAR", clue: "A currency unit worth 100 cents." },
-      { word: "DOUBLES", clue: "An addition fact combining two identical numbers." },
-      { word: "EDGE", clue: "A line segment where two faces meet on a 3D solid." },
-      { word: "EIGHT", clue: "The cardinal number equal to 7 plus 1." },
-      { word: "EIGHTEEN", clue: "The number represented as 10 ones and 8 ones." },
-      { word: "ELEVEN", clue: "The number represented as 10 ones and 1 one." },
-      { word: "EQUAL", clue: "Having the exact same value, amount, or measure." },
-      { word: "EQUATION", clue: "A mathematical sentence showing equality using an equals sign." },
-      { word: "ESTIMATE", clue: "To find an approximate value close enough to the exact answer." },
-      { word: "EVENNUMBER", clue: "An integer divisible by 2 without a remainder." },
-      { word: "EXPRESSION", clue: "A mathematical phrase consisting of numbers and operators." },
-      { word: "FACE", clue: "A flat surface on a 3D solid shape." },
-      { word: "FACTFAMILY", clue: "A set of related addition/subtraction or multiplication/division facts." },
-      { word: "FEWER", clue: "A smaller quantity or amount." },
-      { word: "FIFTEEN", clue: "The number represented as 10 ones and 5 ones." },
-      { word: "FIFTY", clue: "Five sets of ten ones." },
-      { word: "FIRST", clue: "The ordinal position preceding all others." },
-      { word: "FIVE", clue: "The cardinal number equal to 4 plus 1." },
-      { word: "FLAT", clue: "Smooth and even; two-dimensional." },
-      { word: "FOOT", clue: "A customary unit of length equal to 12 inches." },
-      { word: "FOUR", clue: "The cardinal number equal to 3 plus 1." },
-      { word: "FOURTEEN", clue: "The number represented as 10 ones and 4 ones." },
-      { word: "FOURTH", clue: "One of four equal parts, or ordinal position four." },
-      { word: "FRACTION", clue: "A numerical value representing part of a whole." },
-      { word: "GRAM", clue: "A metric unit of mass equal to 1/1000th of a kilogram." },
-      { word: "GRAPH", clue: "A visual diagram showing mathematical data." },
-      { word: "GREATER", clue: "A value or size larger than another." },
-      { word: "HALF", clue: "One of two equal parts of a whole." },
-      { word: "HEAVIER", clue: "Having a weight greater than that of another object." },
-      { word: "HEIGHT", clue: "The vertical distance from bottom to top." },
-      { word: "HEXAGON", clue: "A flat 2D polygon with six straight sides and six vertices." },
-      { word: "HOUR", clue: "A unit of time equal to 60 minutes." },
-      { word: "HUNDRED", clue: "Ten sets of ten ones." },
-      { word: "INCH", clue: "A customary unit of length equal to 1/12th of a foot." },
-      { word: "INTERVAL", clue: "The distance or difference between two values or points." },
-      { word: "KEY", clue: "A guide explaining symbols used on a picture graph." },
-      { word: "KILOGRAM", clue: "A metric unit of mass equal to 1,000 grams." },
-      { word: "LENGTH", clue: "A measure of distance from one end of an object to the other." },
-      { word: "LESS", clue: "Having a value or amount that is smaller." },
-      { word: "LIGHTER", clue: "Having a weight that is smaller than another object." },
-      { word: "LINE", clue: "A straight continuous 1D path extending infinitely in both directions." },
-      { word: "LINEPLOT", clue: "A graph showing frequency of data along a number line." },
-      { word: "LITER", clue: "A standard metric unit of liquid volume." },
-      { word: "LONGER", clue: "Having a greater physical length." },
-      { word: "MASS", clue: "The measure of the amount of matter in an object." },
-      { word: "MATCH", clue: "To pair elements according to one-to-one correspondence." },
-      { word: "METER", clue: "The fundamental unit of length in the metric system." },
-      { word: "MIDNIGHT", clue: "Twelve o'clock at night (12:00 AM)." },
-      { word: "MINUS", clue: "A mathematical operator indicating subtraction." },
-      { word: "MINUTE", clue: "A unit of time equal to 60 seconds." },
-      { word: "MONEY", clue: "Coins and currency bills used as a medium of exchange." },
-      { word: "MORE", clue: "A greater quantity, amount, or number." },
-      { word: "MULTIPLE", clue: "The product of a number and any whole number." },
-      { word: "MULTIPLY", clue: "To calculate the total of a number repeated a given times." },
-      { word: "NICKEL", clue: "A coin worth 5 cents." },
-      { word: "NINE", clue: "The cardinal number equal to 8 plus 1." },
-      { word: "NINETEEN", clue: "The number represented as 10 ones and 9 ones." },
-      { word: "NOON", clue: "Twelve o'clock in the middle of the day (12:00 PM)." },
-      { word: "NUMBER", clue: "A mathematical symbol or word indicating a quantity." },
-      { word: "NUMBERLINE", clue: "A line with marked numbers spaced at equal intervals." },
-      { word: "NUMERAL", clue: "A symbol or group of symbols used to represent a number." },
-      { word: "OCTAGON", clue: "A flat 2D polygon with eight straight sides and eight angles." },
-      { word: "ODDNUMBER", clue: "An integer not divisible evenly by 2." },
-      { word: "ONE", clue: "The single cardinal number preceding two." },
-      { word: "ONES", clue: "The place value representing individual units." },
-      { word: "PAIR", clue: "A set of two related objects or numbers." },
-      { word: "PARALLEL", clue: "Lines in the same plane that never cross or intersect." },
-      { word: "PATTERN", clue: "A repeating sequence of shapes, numbers, or colors." },
-      { word: "PENNY", clue: "A coin worth 1 cent." },
-      { word: "PENTAGON", clue: "A flat 2D polygon with five straight sides and five angles." },
-      { word: "PERIMETER", clue: "The total distance around the continuous boundary of a 2D shape." },
-      { word: "PLACEVALUE", clue: "The numerical value of a digit based on its position." },
-      { word: "PLUS", clue: "A mathematical operator indicating addition." },
-      { word: "POINT", clue: "An exact location in space represented by a dot." },
-      { word: "POLYGON", clue: "A flat closed 2D shape formed by straight line segments." },
-      { word: "PRODUCT", clue: "The answer obtained when multiplying numbers together." },
-      { word: "QUADRANT", clue: "One of four quarters on a coordinate grid." },
-      { word: "QUADRILATERAL", clue: "A flat 2D polygon having four straight sides." },
-      { word: "QUANTITY", clue: "An amount, number, or measurement of something." },
-      { word: "QUARTER", clue: "One of four equal parts, or a coin worth 25 cents." },
-      { word: "QUOTIENT", clue: "The answer obtained when dividing one number by another." },
-      { word: "RAY", clue: "A straight path starting at an endpoint and extending infinitely." },
-      { word: "RECTANGLE", clue: "A 4-sided shape with 4 right angles and opposite sides equal." },
-      { word: "RHOMBUS", clue: "A parallelogram with four sides of equal length." },
-      { word: "RIGHTANGLE", clue: "An angle measuring exactly 90 degrees." },
-      { word: "ROLL", clue: "To move something by turning it over and over." },
-      { word: "ROW", clue: "A horizontal alignment of numbers or objects." },
-      { word: "RULER", clue: "A tool used to measure length or draw straight lines." },
-      { word: "SAME", clue: "Identical in size, quantity, shape, or amount." },
-      { word: "SCALE", clue: "A series of mark intervals on a graph or measuring tool." },
-      { word: "SECOND", clue: "A base unit of time, or ordinal position two." },
-      { word: "SEVEN", clue: "The cardinal number equal to 6 plus 1." },
-      { word: "SEVENTEEN", clue: "The number represented as 10 ones and 7 ones." },
-      { word: "SHAPE", clue: "The outer form or outline of an object." },
-      { word: "SHORTER", clue: "Having a smaller physical height or length." },
-      { word: "SIDE", clue: "A straight line segment forming part of a 2D shape." },
-      { word: "SIX", clue: "The cardinal number equal to 5 plus 1." },
-      { word: "SIXTEEN", clue: "The number represented as 10 ones and 6 ones." },
-      { word: "SIZE", clue: "The overall magnitude or dimensions of an object." },
-      { word: "SLIDE", clue: "To move an object along a surface without flipping or turning." },
-      { word: "SMALLER", clue: "Having a size or amount less than another." },
-      { word: "SOLIDSHAPE", clue: "A 3D object having length, width, and height." },
-      { word: "SORT", clue: "To arrange or group objects by shared attributes." },
-      { word: "SPHERE", clue: "A 3D solid shaped like a perfectly round ball." },
-      { word: "SQUARE", clue: "A 2D shape with 4 equal straight sides and 4 right angles." },
-      { word: "STACK", clue: "To arrange objects neatly one on top of another." },
-      { word: "SUBTRACT", clue: "To take away or find the difference between amounts." },
-      { word: "SUM", clue: "The total result obtained by adding numbers together." },
-      { word: "SURVEY", clue: "A method of gathering data by asking questions." },
-      { word: "TALLY", clue: "A mark used to track count in groups of five." },
-      { word: "TALLER", clue: "Having a greater vertical height." },
-      { word: "TEN", clue: "The cardinal number equal to 9 plus 1." },
-      { word: "TENS", clue: "The place value representing groups of ten." },
-      { word: "THIRD", clue: "One of three equal parts, or ordinal position three." },
-      { word: "THIRTEEN", clue: "The number represented as 10 ones and 3 ones." },
-      { word: "THREE", clue: "The cardinal number equal to 2 plus 1." },
-      { word: "TIME", clue: "A measure of duration or moment on a clock." },
-      { word: "TRAPEZOID", clue: "A quadrilateral with at least one pair of parallel sides." },
-      { word: "TRIANGLE", clue: "A 2D polygon with three straight sides and three vertices." },
-      { word: "TWELVE", clue: "The number represented as 10 ones and 2 ones." },
-      { word: "TWENTY", clue: "Two complete sets of ten ones." },
-      { word: "TWO", clue: "The cardinal number equal to 1 plus 1." },
-      { word: "UNIT", clue: "A standard quantity used as a measurement basis." },
-      { word: "VALUE", clue: "The numerical worth or quantity of an expression." },
-      { word: "VARIABLE", clue: "A letter standing in for an unknown numerical value." },
-      { word: "VERTEX", clue: "A point or corner where two or more lines or edges meet." },
-      { word: "WEEK", clue: "A time period equal to seven consecutive days." },
-      { word: "WEIGHT", clue: "A measure of the heaviness of an object due to gravity." },
-      { word: "WHOLE", clue: "All of something; complete without missing parts." },
-      { word: "WIDTH", clue: "The measurement of distance from side to side." },
-      { word: "YARD", clue: "A customary unit of length equal to 3 feet or 36 inches." },
-      { word: "ZERO", clue: "The number representing the absence of quantity or value." }
-    ];
+    const SPREADSHEET_ID = '16mDDf_hlxak7MPRprs-bWBFy83Mrs8WWHdtFJ8LP_SQ';
+    const CSV_URL = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/pub?output=csv`;
 
-    // K - 5th Grade Vocabulary
-    const BANK_L2 = [
-      ...BANK_L1,
-      { word: "ACUTEANGLE", clue: "An angle measuring strictly less than 90 degrees." },
-      { word: "ACUTETRIANGLE", clue: "A triangle where all three angles are acute." },
-      { word: "ALGORITHM", clue: "A step-by-step set of rules for solving a problem." },
-      { word: "AREA", clue: "The total surface measure enclosed within a 2D figure." },
-      { word: "BENCHMARK", clue: "A standard reference point used for comparison or estimation." },
-      { word: "BRACKETS", clue: "Symbols [ ] used in equations to group operations." },
-      { word: "CENTIMETER", clue: "A metric unit of length equal to 1/100th of a meter." },
-      { word: "COMMONFACTOR", clue: "A number that divides two or more numbers without remainder." },
-      { word: "COMMONMULTIPLE", clue: "A number that is a multiple of two or more numbers." },
-      { word: "COMPOSITE", clue: "A whole number greater than 1 with more than two factors." },
-      { word: "CONGRUENT", clue: "Having identical shapes and exact equal measurements." },
-      { word: "CUBICUNIT", clue: "A unit used to measure volume equivalent to a cube." },
-      { word: "DECIMAL", clue: "A fractional number expressed in base-10 using a dot." },
-      { word: "DENOMINATOR", clue: "The bottom number in a fraction representing total equal parts." },
-      { word: "DIAGONAL", clue: "A straight segment connecting two non-adjacent polygon vertices." },
-      { word: "DISTRIBUTIVE", clue: "Property allowing a factor to multiply addends individually." },
-      { word: "DIVIDEND", clue: "The number that is being divided in a division problem." },
-      { word: "DIVISIBLE", clue: "Able to be divided by a whole number without remainder." },
-      { word: "DIVISOR", clue: "The number by which another number is divided." },
-      { word: "EQUIVALENT", clue: "Equal in value, amount, function, or meaning." },
-      { word: "EXPONENT", clue: "A number indicating how many times a base is multiplied." },
-      { word: "FORMULA", clue: "A mathematical rule expressed with symbols and equations." },
-      { word: "FRACTION", clue: "A numerical value that represents part of a whole." },
-      { word: "HUNDREDTH", clue: "One part out of one hundred equal parts." },
-      { word: "IMPROPERFRACTION", clue: "A fraction where numerator is greater than or equal to denominator." },
-      { word: "INTERSECT", clue: "To cross or meet at a common single point." },
-      { word: "ISOSCELES", clue: "A triangle having at least two sides of equal length." },
-      { word: "KILOMETER", clue: "A metric unit of length equal to 1,000 meters." },
-      { word: "LINEPLOT", clue: "A data graph showing mark frequencies above a number line." },
-      { word: "MASS", clue: "The total quantity of matter contained inside an object." },
-      { word: "MILLILITER", clue: "A metric unit of capacity equal to 1/1000th of a liter." },
-      { word: "MIXEDNUMBER", clue: "A value made up of a whole number and a proper fraction." },
-      { word: "NUMERATOR", clue: "The top number in a fraction representing parts taken." },
-      { word: "OBTUSEANGLE", clue: "An angle measuring strictly between 90 and 180 degrees." },
-      { word: "ORDEROFOPERATIONS", clue: "Rules defining the exact sequence for evaluating expressions." },
-      { word: "PARALLEL", clue: "Lines in the same plane that never intersect." },
-      { word: "PARALLELOGRAM", clue: "A 4-sided polygon with opposite sides parallel and equal." },
-      { word: "PARENTHESES", clue: "Grouping symbols ( ) used around operations in math." },
-      { word: "PERCENT", clue: "A ratio showing parts per hundred using % symbol." },
-      { word: "PERPENDICULAR", clue: "Lines that cross or meet at right 90-degree angles." },
-      { word: "POLYHEDRON", clue: "A 3D solid figure bounded by flat polygonal faces." },
-      { word: "PRIMENUMBER", clue: "A whole number greater than 1 with exactly two factors." },
-      { word: "PRISM", clue: "A 3D solid with two parallel congruent polygonal bases." },
-      { word: "PROTRACTOR", clue: "A tool used to measure or draw angles in degrees." },
-      { word: "PYRAMID", clue: "A 3D solid with a polygon base and triangular sides meeting at a point." },
-      { word: "QUADRILATERAL", clue: "Any 2D closed polygon having four straight sides." },
-      { word: "REMAINDER", clue: "The amount left over after performing integer division." },
-      { word: "ROUNDING", clue: "Replacing a number with a simpler close value." },
-      { word: "SCALENE", clue: "A triangle with three sides of completely different lengths." },
-      { word: "SEQUENCE", clue: "An ordered list of numbers following a clear pattern." },
-      { word: "SIMPLIFY", clue: "To write a fraction or expression in its simplest form." },
-      { word: "TENTH", clue: "One part out of ten equal parts." },
-      { word: "THOUSANDTH", clue: "One part out of one thousand equal parts." },
-      { word: "VOLUME", clue: "The total measure of 3D space occupied by a solid object." }
-    ];
-
-    // Grades 6 - Secondary 1 CCSS Vocabulary
-    const BANK_L3 = [
-      ...BANK_L2,
-      { word: "ABSOLUTEVALUE", clue: "The distance of a real number from zero on a number line." },
-      { word: "ADDITIVEINVERSE", clue: "The opposite of a number that yields a sum of zero when added." },
-      { word: "ALTITUDE", clue: "The perpendicular distance from a vertex to the opposite side or base." },
-      { word: "APOTHEM", clue: "A segment from the center of a regular polygon perpendicular to a side." },
-      { word: "ARITHMETICSEQ", clue: "A sequence of numbers where consecutive terms differ by a constant value." },
-      { word: "ASYMPTOTE", clue: "A line that a curve approaches progressively closer without touching." },
-      { word: "AVERAGERATEOFCHANGE", clue: "The ratio of change in output values over change in input values." },
-      { word: "BIVARIATEDATA", clue: "Data involving two paired numerical variables for statistical analysis." },
-      { word: "BOUNDARYLINE", clue: "A line that separates the coordinate plane into two half-planes." },
-      { word: "BOXPLOT", clue: "A visual summary of data displaying minimum, quartiles, and maximum." },
-      { word: "CATEGORICALDATA", clue: "Qualitative data grouped into distinct non-numerical categories." },
-      { word: "CAUSATION", clue: "A relationship where a change in one variable causes a change in another." },
-      { word: "CIRCULARARC", clue: "A continuous portion or segment of the circumference of a circle." },
-      { word: "COEFFICIENT", clue: "A constant numerical factor multiplied by a variable term." },
-      { word: "COMMISSIONS", clue: "A fee paid to a salesperson based on a percentage of total sales." },
-      { word: "COMPLEMENTARY", clue: "Two angles whose measures add up to exactly 90 degrees." },
-      { word: "COMPOUNDEVENT", clue: "An event made up of two or more simple probability outcomes." },
-      { word: "COMPOUNDINEQUALITY", clue: "Two inequalities joined together with the word 'and' or 'or'." },
-      { word: "CONDITIONALFREQ", clue: "A relative frequency comparing a joint frequency to a marginal total." },
-      { word: "CONGRUENT", clue: "Figures having identical geometric shapes and exact equal measurements." },
-      { word: "CONSISTENTSYSTEM", clue: "A system of equations that has at least one valid solution." },
-      { word: "CONSTANTRATE", clue: "A rate of change that remains equal and unchanged throughout." },
-      { word: "CONSTANTTERM", clue: "A term in an algebraic expression that has a fixed numerical value." },
-      { word: "CORRELATIONCOEFF", clue: "A statistic r from -1 to 1 measuring strength of linear association." },
-      { word: "CORRESPONDINGSIDE", clue: "Sides in similar or congruent figures that occupy relative positions." },
-      { word: "CUBEROOT", clue: "A number that yields a given value when multiplied by itself three times." },
-      { word: "DEPENDENTVAR", clue: "A variable whose value changes in response to an independent input." },
-      { word: "DILATION", clue: "A transformation that resizes a figure using a specific scale factor." },
-      { word: "DISCRETE", clue: "Data or domain consisting of isolated, distinct countable points." },
-      { word: "DISTANCEFORMULA", clue: "Formula d = √((x2-x1)² + (y2-y1)²) for distance between points." },
-      { word: "DOMAIN", clue: "The complete set of all possible input x-values for a function." },
-      { word: "DOTPLOT", clue: "A simple visual plot marking individual data values above a line." },
-      { word: "ENDBEHAVIOR", clue: "The behavior of graph outputs as input x approaches infinity." },
-      { word: "EQUILATERAL", clue: "A geometric polygon having all sides equal in length." },
-      { word: "EXPONENTIALEQ", clue: "An equation where variables appear as exponents." },
-      { word: "EXPLICITFORMULA", clue: "A formula defining the nth term of a sequence directly using n." },
-      { word: "EXTRAPOLATE", clue: "To estimate or predict values beyond the range of observed data." },
-      { word: "FUNCTION", clue: "A relation linking every input value to exactly one output value." },
-      { word: "GEOMETRICSEQ", clue: "A sequence where consecutive terms share a constant common ratio." },
-      { word: "HISTOGRAM", clue: "A bar graph showing frequency distribution over continuous intervals." },
-      { word: "HYPOTENUSE", clue: "The side opposite the right angle in a right triangle." },
-      { word: "INCONSISTENT", clue: "A system of equations that has no valid solutions." },
-      { word: "INEQUALITY", clue: "A statement comparing expressions using greater/less than signs." },
-      { word: "INTERCEPT", clue: "The coordinate point where a graph crosses or meets an axis." },
-      { word: "INTERQUARTILE", clue: "Range measuring the middle 50% spread between Q1 and Q3." },
-      { word: "INTERPOLATE", clue: "To estimate values lying within the known range of observed data." },
-      { word: "IRRATIONAL", clue: "Real numbers that cannot be expressed as a simple fraction ratio." },
-      { word: "ISOSCELES", clue: "A triangle having at least two sides of equal length." },
-      { word: "JOINTFREQUENCY", clue: "Entry totals in the interior body of a two-way frequency table." },
-      { word: "LINE", clue: "A continuous 1D geometric figure extending infinitely both ways." },
-      { word: "LINEOFBESTFIT", clue: "A straight trend line minimizing point distances on scatter plots." },
-      { word: "LINEARFUNCTION", clue: "A function represented visually by a straight line with constant slope." },
-      { word: "MARGINALFREQ", clue: "Row or column total sums shown along edges of two-way tables." },
-      { word: "MEAN", clue: "The calculated numerical average of a set of data values." },
-      { word: "MEANABSDEV", clue: "Average absolute difference between each data point and the mean." },
-      { word: "MEDIAN", clue: "The exact middle numerical value when data is ordered." },
-      { word: "MODE", clue: "The data value or values occurring most frequently in a set." },
-      { word: "NET", clue: "A two-dimensional pattern that folds into a three-dimensional solid." },
-      { word: "NONLINEAR", clue: "Relationships or functions whose graphs are not straight lines." },
-      { word: "ODDFUNCTION", clue: "A function symmetric with respect to the origin: f(-x) = -f(x)." },
-      { word: "ORDEREDPAIR", clue: "A coordinate pair (x, y) identifying a point on a plane." },
-      { word: "ORIGIN", clue: "The zero point (0, 0) where coordinate grid axes intersect." },
-      { word: "OUTLIER", clue: "An observation lying far outside the general trend of data." },
-      { word: "PARALLEL", clue: "Lines in a plane that remain equidistant and never intersect." },
-      { word: "PARALLELOGRAM", clue: "A quadrilateral with two pairs of opposite parallel equal sides." },
-      { word: "PARAMETER", clue: "A constant or variable in a mathematical function defining its form." },
-      { word: "PERIMETER", clue: "The continuous distance around the outer edge of a closed shape." },
-      { word: "PERPENDICULAR", clue: "Lines intersecting each other at right 90-degree angles." },
-      { word: "POLYGON", clue: "A flat closed 2D plane shape bounded by straight line segments." },
-      { word: "PROPORTION", clue: "An equation asserting that two mathematical ratios are equal." },
-      { word: "PYTHAGOREAN", clue: "Theorem stating a² + b² = c² for all right-angled triangles." },
-      { word: "QUADRANT", clue: "One of four regions created on a plane by coordinate axes." },
-      { word: "QUADRILATERAL", clue: "Any closed two-dimensional polygon having four straight sides." },
-      { word: "QUARTILE", clue: "Values dividing a sorted data set into four equal quarters." },
-      { word: "RADICALS", clue: "Expressions containing square, cube, or higher roots." },
-      { word: "RANGE", clue: "The difference between maximum and minimum values in data." },
-      { word: "RATEOFCHANGE", clue: "The ratio measuring output change relative to input change." },
-      { word: "RATIONAL", clue: "Numbers expressible as a ratio or fraction of two integers." },
-      { word: "RECIPROCAL", clue: "The multiplicative inverse obtained by flipping a fraction." },
-      { word: "REFLECTION", clue: "A transformation that flips a figure over a mirror line." },
-      { word: "RESIDUALS", clue: "Differences between actual data values and model predictions." },
-      { word: "RIGHTPRISM", clue: "A solid prism with side faces meeting bases at right angles." },
-      { word: "RIGHTTRIANGLE", clue: "A triangle containing one interior right 90-degree angle." },
-      { word: "RIGIDMOTION", clue: "Transformations preserving distance and angle measure like flips/turns." },
-      { word: "ROTATION", clue: "A transformation turning a shape around a fixed center point." },
-      { word: "SCALEFACTOR", clue: "The ratio comparing side lengths of scaled similar figures." },
-      { word: "SCATTERPLOT", clue: "A graph plotting paired bivariate data as points on grid axes." },
-      { word: "SCALENE", clue: "A triangle with three sides of completely different lengths." },
-      { word: "SEQUENCE", clue: "An ordered list of numbers following a mathematical rule." },
-      { word: "SIMILAR", clue: "Figures with identical corresponding angles and proportional sides." },
-      { word: "SIMULATION", clue: "An experiment modeling chance situations to estimate probability." },
-      { word: "SLOPE", clue: "The ratio measuring line steepness as vertical rise over run." },
-      { word: "SOLUTION", clue: "Any value satisfying an equation, inequality, or system." },
-      { word: "SPREAD", clue: "A numerical measure describing the variability or dispersion of data." },
-      { word: "SQUAREROOT", clue: "A number that yields a given value when multiplied by itself." },
-      { word: "STANDARDDEV", clue: "A statistic quantifying variation or dispersion around the mean." },
-      { word: "SUBSTITUTION", clue: "Algebraic technique replacing variables with equal expressions." },
-      { word: "SUPPLEMENTARY", clue: "Two angles whose measures sum up to exactly 180 degrees." },
-      { word: "SURFACEAREA", clue: "The total area covering the outer surfaces of a 3D solid." },
-      { word: "SYSTEMOFEQ", clue: "A collection of two or more equations sharing common variables." },
-      { word: "SYSTEMOFINEQ", clue: "A set of linear inequalities with shared target variables." },
-      { word: "TERM", clue: "A single number, variable, or product in an expression." },
-      { word: "TERMINATING", clue: "A decimal representation containing a finite number of digits." },
-      { word: "TRANSFORMATION", clue: "Operations altering position, orientation, or size of shapes." },
-      { word: "TRANSLATION", clue: "A transformation sliding every point of a shape equal distance." },
-      { word: "TRANSVERSAL", clue: "A line crossing two or more coplanar lines at distinct points." },
-      { word: "TRAPEZOID", clue: "A quadrilateral with at least one pair of parallel sides." },
-      { word: "TREND", clue: "The general direction or pattern shown across sequential data." },
-      { word: "TRIANGLE", clue: "A 3-sided polygon whose interior angles sum to 180 degrees." },
-      { word: "TWOWAYTABLE", clue: "A grid displaying frequency data for two categorical variables." },
-      { word: "UNITRATE", clue: "A simplified rate comparing a quantity to a single unit (1)." },
-      { word: "VARIABLE", clue: "A letter standing in for an unknown numerical quantity." },
-      { word: "VECTOR", clue: "A quantity possessing both numerical magnitude and direction." },
-      { word: "VERTICALANGLE", clue: "Opposite non-adjacent congruent angles formed by intersecting lines." },
-      { word: "VOLUME", clue: "The measure of total 3D space contained inside a solid." },
-      { word: "XINTERCEPT", clue: "The x-coordinate where a graph crosses the horizontal axis." },
-      { word: "YINTERCEPT", clue: "The y-coordinate where a graph crosses the vertical axis." }
-    ];
-
+    let globalWordBank = [];
     let currentLevel = 2;
     let currentStatsFilter = 'all';
     let GRID_SIZE = 13;
@@ -568,14 +196,60 @@
     let checkedStatusByLevel = {};
     let completedLevelsToday = {};
 
+    async function loadGoogleSheetWordBank() {
+      try {
+        const response = await fetch(CSV_URL);
+        const text = await response.text();
+        
+        const lines = text.split('\n');
+        const bank = [];
+        
+        for (let i = 1; i < lines.length; i++) {
+          const line = lines[i].trim();
+          if (!line) continue;
+          
+          let word = "";
+          let clue = "";
+          
+          if (line.startsWith('"')) {
+            const nextQuoteIdx = line.indexOf('",', 1);
+            if (nextQuoteIdx !== -1) {
+              word = line.substring(1, nextQuoteIdx);
+              clue = line.substring(nextQuoteIdx + 2).replace(/^"/, '').replace(/"$/, '');
+            } else {
+              const parts = line.split(',');
+              word = parts[0];
+              clue = parts.slice(1).join(',');
+            }
+          } else {
+            const parts = line.split(',');
+            word = parts[0];
+            clue = parts.slice(1).join(',');
+          }
+
+          word = word.replace(/[^a-zA-Z]/g, '').toUpperCase();
+          clue = clue.trim();
+
+          if (word && clue) {
+            bank.push({ word, clue });
+          }
+        }
+
+        globalWordBank = bank;
+        document.getElementById('message').textContent = '';
+        generateDailyCrossword();
+        renderBoard();
+        renderClues();
+      } catch (err) {
+        console.error("Failed to load Google Sheet word bank:", err);
+        document.getElementById('message').textContent = 'Error loading word bank from Google Sheets.';
+      }
+    }
+
     function saveProgress() {
-      const todaySeed = getTodaySeed(0) - (currentLevel * 1000); // base date seed without level offset
+      const todaySeed = getTodaySeed(0) - (currentLevel * 1000);
       const storageKey = `cw_math_saved_state_${todaySeed}`;
-      const stateToSave = {
-        userInputsByLevel,
-        checkedStatusByLevel
-      };
-      localStorage.setItem(storageKey, JSON.stringify(stateToSave));
+      localStorage.setItem(storageKey, JSON.stringify({ userInputsByLevel, checkedStatusByLevel }));
     }
 
     function loadProgress() {
@@ -595,30 +269,16 @@
 
     function getTodaySeed(offsetDays = 0) {
       const now = new Date();
-      if (offsetDays !== 0) {
-        now.setDate(now.getDate() + offsetDays);
-      }
-      const estStr = now.toLocaleDateString('en-US', {
-        timeZone: 'America/New_York',
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit'
-      });
+      if (offsetDays !== 0) now.setDate(now.getDate() + offsetDays);
+      const estStr = now.toLocaleDateString('en-US', { timeZone: 'America/New_York', year: 'numeric', month: '2-digit', day: '2-digit' });
       const [m, d, y] = estStr.split('/');
       return parseInt(`${y}${m}${d}`, 10) + (currentLevel * 1000);
     }
 
     function getSpecificSeedForLevel(level, offsetDays = 0) {
       const now = new Date();
-      if (offsetDays !== 0) {
-        now.setDate(now.getDate() + offsetDays);
-      }
-      const estStr = now.toLocaleDateString('en-US', {
-        timeZone: 'America/New_York',
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit'
-      });
+      if (offsetDays !== 0) now.setDate(now.getDate() + offsetDays);
+      const estStr = now.toLocaleDateString('en-US', { timeZone: 'America/New_York', year: 'numeric', month: '2-digit', day: '2-digit' });
       const [m, d, y] = estStr.split('/');
       return parseInt(`${y}${m}${d}`, 10) + (level * 1000);
     }
@@ -632,36 +292,21 @@
     }
 
     function setupLevelConfig() {
-      if (currentLevel === 1) {
-        GRID_SIZE = 11;
-        targetWordCount = 5;
-      } else if (currentLevel === 2) {
-        GRID_SIZE = 13;
-        targetWordCount = 10;
-      } else {
-        GRID_SIZE = 15;
-        targetWordCount = 20;
-      }
+      if (currentLevel === 1) { GRID_SIZE = 11; targetWordCount = 5; }
+      else if (currentLevel === 2) { GRID_SIZE = 13; targetWordCount = 10; }
+      else { GRID_SIZE = 15; targetWordCount = 20; }
     }
 
     function generateDailyCrossword() {
+      if (!globalWordBank || globalWordBank.length === 0) return;
+
       setupLevelConfig();
       const seed = getTodaySeed();
       const rng = createRandom(seed);
       
-      let poolSource = BANK_L2;
-      if (currentLevel === 1) poolSource = BANK_L1;
-      if (currentLevel === 3) poolSource = BANK_L3;
-
-      const uniquePoolSource = poolSource.filter((item, index, self) =>
-        index === self.findIndex((t) => t.word === item.word)
-      );
-
+      const uniquePoolSource = globalWordBank.filter((item, index, self) => index === self.findIndex((t) => t.word === item.word));
       const filteredPool = uniquePoolSource.filter(w => w.word.length <= GRID_SIZE - 2);
-      
-      const pool = [...filteredPool].map(w => ({ w, key: rng() }))
-                                    .sort((a, b) => a.key - b.key)
-                                    .map(item => item.w);
+      const pool = [...filteredPool].map(w => ({ w, key: rng() })).sort((a, b) => a.key - b.key).map(item => item.w);
       
       boardState = Array(GRID_SIZE).fill(null).map(() => Array(GRID_SIZE).fill(null));
       
@@ -673,7 +318,6 @@
       }
 
       placedWords = [];
-
       if (pool.length === 0) return;
 
       const first = pool.pop();
@@ -692,7 +336,6 @@
 
         for (let pIdx = 0; pIdx < placedWords.length && !placed; pIdx++) {
           const pWord = placedWords[pIdx];
-          
           for (let i = 0; i < word.length && !placed; i++) {
             for (let j = 0; j < pWord.word.length && !placed; j++) {
               if (word[i] === pWord.word[j]) {
@@ -700,13 +343,8 @@
                 let testR = pWord.r;
                 let testC = pWord.c;
 
-                if (pWord.dir === 'ACROSS') {
-                  testC = pWord.c + j;
-                  testR = pWord.r - i;
-                } else {
-                  testR = pWord.r + j;
-                  testC = pWord.c - i;
-                }
+                if (pWord.dir === 'ACROSS') { testC = pWord.c + j; testR = pWord.r - i; }
+                else { testR = pWord.r + j; testC = pWord.c - i; }
 
                 if (canPlaceWord(word, testR, testC, targetDir)) {
                   placeWordLetters(word, testR, testC, targetDir);
@@ -720,7 +358,6 @@
       }
 
       renumberCrossword();
-
       if (placedWords.length > 0) {
         selectedCell = { r: placedWords[0].r, c: placedWords[0].c };
         currentDirection = placedWords[0].dir;
@@ -728,31 +365,19 @@
     }
 
     function generatePuzzleForYesterday(level) {
-      let gSize = 13;
-      let tCount = 10;
+      if (!globalWordBank || globalWordBank.length === 0) return [];
+      let gSize = 13; let tCount = 10;
       if (level === 1) { gSize = 11; tCount = 5; }
       if (level === 3) { gSize = 15; tCount = 20; }
 
       const seed = getSpecificSeedForLevel(level, -1);
       const rng = createRandom(seed);
-
-      let poolSource = BANK_L2;
-      if (level === 1) poolSource = BANK_L1;
-      if (level === 3) poolSource = BANK_L3;
-
-      const uniquePoolSource = poolSource.filter((item, index, self) =>
-        index === self.findIndex((t) => t.word === item.word)
-      );
-
+      const uniquePoolSource = globalWordBank.filter((item, index, self) => index === self.findIndex((t) => t.word === item.word));
       const filteredPool = uniquePoolSource.filter(w => w.word.length <= gSize - 2);
-      
-      const pool = [...filteredPool].map(w => ({ w, key: rng() }))
-                                    .sort((a, b) => a.key - b.key)
-                                    .map(item => item.w);
+      const pool = [...filteredPool].map(w => ({ w, key: rng() })).sort((a, b) => a.key - b.key).map(item => item.w);
 
       const tempBoard = Array(gSize).fill(null).map(() => Array(gSize).fill(null));
       const tempPlaced = [];
-
       if (pool.length === 0) return [];
 
       const first = pool.pop();
@@ -771,21 +396,13 @@
 
         for (let pIdx = 0; pIdx < tempPlaced.length && !placed; pIdx++) {
           const pWord = tempPlaced[pIdx];
-          
           for (let i = 0; i < word.length && !placed; i++) {
             for (let j = 0; j < pWord.word.length && !placed; j++) {
               if (word[i] === pWord.word[j]) {
                 const targetDir = pWord.dir === 'ACROSS' ? 'DOWN' : 'ACROSS';
-                let testR = pWord.r;
-                let testC = pWord.c;
-
-                if (pWord.dir === 'ACROSS') {
-                  testC = pWord.c + j;
-                  testR = pWord.r - i;
-                } else {
-                  testR = pWord.r + j;
-                  testC = pWord.c - i;
-                }
+                let testR = pWord.r; let testC = pWord.c;
+                if (pWord.dir === 'ACROSS') { testC = pWord.c + j; testR = pWord.r - i; }
+                else { testR = pWord.r + j; testC = pWord.c - i; }
 
                 if (canPlaceWordCustom(word, testR, testC, targetDir, tempBoard, gSize)) {
                   placeWordLettersCustom(word, testR, testC, targetDir, tempBoard);
@@ -800,25 +417,13 @@
 
       const startCells = [];
       tempPlaced.forEach(w => {
-        if (!startCells.some(cell => cell.r === w.r && cell.c === w.c)) {
-          startCells.push({ r: w.r, c: w.c });
-        }
+        if (!startCells.some(cell => cell.r === w.r && cell.c === w.c)) startCells.push({ r: w.r, c: w.c });
       });
-
-      startCells.sort((a, b) => {
-        if (a.r !== b.r) return a.r - b.r;
-        return a.c - b.c;
-      });
-
+      startCells.sort((a, b) => (a.r !== b.r) ? a.r - b.r : a.c - b.c);
       startCells.forEach((cell, idx) => {
         const num = idx + 1;
-        tempPlaced.forEach(w => {
-          if (w.r === cell.r && w.c === cell.c) {
-            w.num = num;
-          }
-        });
+        tempPlaced.forEach(w => { if (w.r === cell.r && w.c === cell.c) w.num = num; });
       });
-
       return tempPlaced.sort((a, b) => a.num - b.num);
     }
 
@@ -859,42 +464,26 @@
       for (let i = 0; i < word.length; i++) {
         const currR = dir === 'ACROSS' ? r : r + i;
         const currC = dir === 'ACROSS' ? c + i : c;
-        
-        if (!board[currR][currC]) {
-          board[currR][currC] = { char: word[i], num: null };
-        }
+        if (!board[currR][currC]) board[currR][currC] = { char: word[i], num: null };
       }
     }
 
     function renumberCrossword() {
       for (let r = 0; r < GRID_SIZE; r++) {
         for (let c = 0; c < GRID_SIZE; c++) {
-          if (boardState[r][c]) {
-            boardState[r][c].num = null;
-          }
+          if (boardState[r][c]) boardState[r][c].num = null;
         }
       }
 
       const startCells = [];
       placedWords.forEach(w => {
-        if (!startCells.some(cell => cell.r === w.r && cell.c === w.c)) {
-          startCells.push({ r: w.r, c: w.c });
-        }
+        if (!startCells.some(cell => cell.r === w.r && cell.c === w.c)) startCells.push({ r: w.r, c: w.c });
       });
-
-      startCells.sort((a, b) => {
-        if (a.r !== b.r) return a.r - b.r;
-        return a.c - b.c;
-      });
-
+      startCells.sort((a, b) => (a.r !== b.r) ? a.r - b.r : a.c - b.c);
       startCells.forEach((cell, idx) => {
         const num = idx + 1;
         boardState[cell.r][cell.c].num = num;
-        placedWords.forEach(w => {
-          if (w.r === cell.r && w.c === cell.c) {
-            w.num = num;
-          }
-        });
+        placedWords.forEach(w => { if (w.r === cell.r && w.c === cell.c) w.num = num; });
       });
     }
 
@@ -935,25 +524,18 @@
       for (let i = 0; i < word.length; i++) {
         const currR = dir === 'ACROSS' ? r : r + i;
         const currC = dir === 'ACROSS' ? c + i : c;
-        
-        if (!boardState[currR][currC]) {
-          boardState[currR][currC] = { char: word[i], num: null };
-        }
+        if (!boardState[currR][currC]) boardState[currR][currC] = { char: word[i], num: null };
       }
     }
 
     function getActiveWordCells() {
       const activeWord = placedWords.find(w => {
         if (w.dir !== currentDirection) return false;
-        if (w.dir === 'ACROSS') {
-          return selectedCell.r === w.r && selectedCell.c >= w.c && selectedCell.c < w.c + w.word.length;
-        } else {
-          return selectedCell.c === w.c && selectedCell.r >= w.r && selectedCell.r < w.r + w.word.length;
-        }
+        if (w.dir === 'ACROSS') return selectedCell.r === w.r && selectedCell.c >= w.c && selectedCell.c < w.c + w.word.length;
+        else return selectedCell.c === w.c && selectedCell.r >= w.r && selectedCell.r < w.r + w.word.length;
       });
 
       if (!activeWord) return [];
-
       const cells = [];
       for (let i = 0; i < activeWord.word.length; i++) {
         const r = activeWord.dir === 'ACROSS' ? activeWord.r : activeWord.r + i;
@@ -981,10 +563,7 @@
             const r = w.dir === 'ACROSS' ? w.r : w.r + i;
             const c = w.dir === 'ACROSS' ? w.c + i : w.c;
             const cellKey = `${r}-${c}`;
-            
-            if (!cellStatusMap[cellKey] || status === 'incorrect') {
-              cellStatusMap[cellKey] = status;
-            }
+            if (!cellStatusMap[cellKey] || status === 'incorrect') cellStatusMap[cellKey] = status;
           }
         }
       });
@@ -1009,32 +588,20 @@
             valEl.textContent = currentInputs[r] ? currentInputs[r][c] : '';
             cellEl.appendChild(valEl);
 
-            if (wordHighlightCells.some(cellPos => cellPos.r === r && cellPos.c === c)) {
-              cellEl.classList.add('word-highlight');
-            }
-
-            if (r === selectedCell.r && c === selectedCell.c) {
-              cellEl.classList.add('selected');
-            }
+            if (wordHighlightCells.some(cellPos => cellPos.r === r && cellPos.c === c)) cellEl.classList.add('word-highlight');
+            if (r === selectedCell.r && c === selectedCell.c) cellEl.classList.add('selected');
 
             const cellKey = `${r}-${c}`;
-            if (cellStatusMap[cellKey] === 'correct') {
-              cellEl.classList.add('cell-correct');
-            } else if (cellStatusMap[cellKey] === 'incorrect') {
-              cellEl.classList.add('cell-incorrect');
-            }
+            if (cellStatusMap[cellKey] === 'correct') cellEl.classList.add('cell-correct');
+            else if (cellStatusMap[cellKey] === 'incorrect') cellEl.classList.add('cell-incorrect');
 
             cellEl.addEventListener('click', () => {
-              if (selectedCell.r === r && selectedCell.c === c) {
-                currentDirection = currentDirection === 'ACROSS' ? 'DOWN' : 'ACROSS';
-              } else {
-                selectedCell = { r, c };
-              }
+              if (selectedCell.r === r && selectedCell.c === c) currentDirection = currentDirection === 'ACROSS' ? 'DOWN' : 'ACROSS';
+              else selectedCell = { r, c };
               renderBoard();
               renderClues();
             });
           }
-
           gridEl.appendChild(cellEl);
         }
       }
@@ -1043,7 +610,6 @@
     function evaluateWordStatus(w) {
       let isFullyFilled = true;
       let isFullyCorrect = true;
-
       const currentInputs = userInputsByLevel[currentLevel] || [];
 
       for (let i = 0; i < w.word.length; i++) {
@@ -1051,12 +617,8 @@
         const c = w.dir === 'ACROSS' ? w.c + i : w.c;
         const val = currentInputs[r] ? currentInputs[r][c] : '';
 
-        if (val === '') {
-          isFullyFilled = false;
-          isFullyCorrect = false;
-        } else if (val !== w.word[i]) {
-          isFullyCorrect = false;
-        }
+        if (val === '') { isFullyFilled = false; isFullyCorrect = false; }
+        else if (val !== w.word[i]) { isFullyCorrect = false; }
       }
 
       if (isFullyFilled && isFullyCorrect) return 'correct';
@@ -1067,16 +629,12 @@
     function renderClues() {
       const acrossEl = document.getElementById('across-clues');
       const downEl = document.getElementById('down-clues');
-      acrossEl.innerHTML = '';
-      downEl.innerHTML = '';
+      acrossEl.innerHTML = ''; downEl.innerHTML = '';
 
       const activeWord = placedWords.find(w => {
         if (w.dir !== currentDirection) return false;
-        if (w.dir === 'ACROSS') {
-          return selectedCell.r === w.r && selectedCell.c >= w.c && selectedCell.c < w.c + w.word.length;
-        } else {
-          return selectedCell.c === w.c && selectedCell.r >= w.r && selectedCell.r < w.r + w.word.length;
-        }
+        if (w.dir === 'ACROSS') return selectedCell.r === w.r && selectedCell.c >= w.c && selectedCell.c < w.c + w.word.length;
+        else return selectedCell.c === w.c && selectedCell.r >= w.r && selectedCell.r < w.r + w.word.length;
       });
 
       const currentCheckedMap = checkedStatusByLevel[currentLevel] || {};
@@ -1085,18 +643,12 @@
       sortedWords.forEach(w => {
         const clueEl = document.createElement('div');
         clueEl.className = 'clue-item';
-        
-        if (activeWord && activeWord.num === w.num && activeWord.dir === w.dir) {
-          clueEl.classList.add('active');
-        }
+        if (activeWord && activeWord.num === w.num && activeWord.dir === w.dir) clueEl.classList.add('active');
 
         const statusKey = `${w.num}-${w.dir}`;
         const status = currentCheckedMap[statusKey];
-        if (status === 'correct') {
-          clueEl.classList.add('clue-correct');
-        } else if (status === 'incorrect') {
-          clueEl.classList.add('clue-incorrect');
-        }
+        if (status === 'correct') clueEl.classList.add('clue-correct');
+        else if (status === 'incorrect') clueEl.classList.add('clue-incorrect');
 
         clueEl.textContent = `${w.num}. ${w.clue}`;
         clueEl.addEventListener('click', () => {
@@ -1116,25 +668,13 @@
       const { r, c } = selectedCell;
       const currentInputs = userInputsByLevel[currentLevel];
 
-      if (key === 'Enter') {
-        e.preventDefault();
-        checkAnswers();
-        return;
-      }
+      if (key === 'Enter') { e.preventDefault(); checkAnswers(); return; }
 
-      if (key === 'ArrowUp') {
-        e.preventDefault();
-        if (r > 0 && boardState[r - 1][c]) selectedCell = { r: r - 1, c };
-      } else if (key === 'ArrowDown') {
-        e.preventDefault();
-        if (r < GRID_SIZE - 1 && boardState[r + 1][c]) selectedCell = { r: r + 1, c };
-      } else if (key === 'ArrowLeft') {
-        e.preventDefault();
-        if (c > 0 && boardState[r][c - 1]) selectedCell = { r, c: c - 1 };
-      } else if (key === 'ArrowRight') {
-        e.preventDefault();
-        if (c < GRID_SIZE - 1 && boardState[r] && boardState[r][c + 1]) selectedCell = { r, c: c + 1 };
-      } else if (key === 'Backspace') {
+      if (key === 'ArrowUp') { e.preventDefault(); if (r > 0 && boardState[r - 1][c]) selectedCell = { r: r - 1, c }; }
+      else if (key === 'ArrowDown') { e.preventDefault(); if (r < GRID_SIZE - 1 && boardState[r + 1][c]) selectedCell = { r: r + 1, c }; }
+      else if (key === 'ArrowLeft') { e.preventDefault(); if (c > 0 && boardState[r][c - 1]) selectedCell = { r, c: c - 1 }; }
+      else if (key === 'ArrowRight') { e.preventDefault(); if (c < GRID_SIZE - 1 && boardState[r] && boardState[r][c + 1]) selectedCell = { r, c: c + 1 }; }
+      else if (key === 'Backspace') {
         if (!boardState[r] || !boardState[r][c]) return;
         currentInputs[r][c] = '';
         saveProgress();
@@ -1152,14 +692,9 @@
 
     function moveSelection(step) {
       let { r, c } = selectedCell;
-      if (currentDirection === 'ACROSS') {
-        c += step;
-      } else {
-        r += step;
-      }
-      if (r >= 0 && r < GRID_SIZE && c >= 0 && c < GRID_SIZE && boardState[r][c]) {
-        selectedCell = { r, c };
-      }
+      if (currentDirection === 'ACROSS') c += step;
+      else r += step;
+      if (r >= 0 && r < GRID_SIZE && c >= 0 && c < GRID_SIZE && boardState[r][c]) selectedCell = { r, c };
     }
 
     function checkAnswers() {
@@ -1170,23 +705,16 @@
         const statusKey = `${w.num}-${w.dir}`;
         const status = evaluateWordStatus(w);
         currentCheckedMap[statusKey] = status;
-        if (status === 'correct') {
-          correctCount++;
-        }
+        if (status === 'correct') correctCount++;
       });
 
-      saveProgress();
-      renderBoard();
-      renderClues();
-
-      // Track granular check attempt stats
+      saveProgress(); renderBoard(); renderClues();
       recordCheckAttempt(currentLevel, correctCount, placedWords.length);
 
       const msgEl = document.getElementById('message');
       if (correctCount === placedWords.length) {
         msgEl.style.color = '#28a745';
         msgEl.textContent = '🎉 Congratulations! You completed Level ' + currentLevel + '!';
-        
         if (!completedLevelsToday[currentLevel]) {
           completedLevelsToday[currentLevel] = true;
           recordLevelWin(currentLevel);
@@ -1199,10 +727,7 @@
 
     function getStats() {
       const data = localStorage.getItem('cw_math_stats_v2');
-      if (data) {
-        return JSON.parse(data);
-      }
-      // Migration from old structure if present
+      if (data) return JSON.parse(data);
       const oldData = localStorage.getItem('cw_math_stats');
       const base = oldData ? JSON.parse(oldData) : {};
       
@@ -1214,21 +739,15 @@
       };
     }
 
-    function saveStats(stats) {
-      localStorage.setItem('cw_math_stats_v2', JSON.stringify(stats));
-    }
+    function saveStats(stats) { localStorage.setItem('cw_math_stats_v2', JSON.stringify(stats)); }
 
     function recordLevelWin(level) {
       const stats = getStats();
-      
       ['all', level].forEach(key => {
         const target = stats[key];
-        target.played += 1;
-        target.wins += 1;
-        target.streak += 1;
+        target.played += 1; target.wins += 1; target.streak += 1;
         if (target.streak > target.maxStreak) target.maxStreak = target.streak;
       });
-
       saveStats(stats);
     }
 
@@ -1236,13 +755,8 @@
       const stats = getStats();
       ['all', level].forEach(key => {
         const target = stats[key];
-        target.totalChecks += totalWords;
-        target.correctChecks += correctWordsCount;
-        
-        // Update total solved words unique count estimation
-        if (correctWordsCount > target.wordsSolved) {
-          target.wordsSolved += (correctWordsCount - (target.lastSolved || 0));
-        }
+        target.totalChecks += totalWords; target.correctChecks += correctWordsCount;
+        if (correctWordsCount > target.wordsSolved) target.wordsSolved += (correctWordsCount - (target.lastSolved || 0));
         target.lastSolved = correctWordsCount;
       });
       saveStats(stats);
@@ -1257,9 +771,7 @@
       document.getElementById('stat-winrate').textContent = `${winRate}%`;
       document.getElementById('stat-streak').textContent = currentData.streak;
       document.getElementById('stat-maxstreak').textContent = currentData.maxStreak;
-
       document.getElementById('stat-words-solved').textContent = currentData.wordsSolved || 0;
-      
       const checkAccuracy = currentData.totalChecks > 0 ? Math.round((currentData.correctChecks / currentData.totalChecks) * 100) : 0;
       document.getElementById('stat-check-accuracy').textContent = `${checkAccuracy}%`;
     }
@@ -1321,7 +833,6 @@
             secEl.appendChild(listEl);
           }
         }
-
         container.appendChild(secEl);
       });
     }
@@ -1348,37 +859,18 @@
     });
 
     document.getElementById('check-btn').addEventListener('click', checkAnswers);
-
-    document.getElementById('yesterday-btn').addEventListener('click', () => {
-      renderYesterdayAnswers();
-      document.getElementById('yesterday-modal').classList.add('open');
-    });
-    document.getElementById('close-yesterday').addEventListener('click', () => {
-      document.getElementById('yesterday-modal').classList.remove('open');
-    });
-
-    document.getElementById('help-btn').addEventListener('click', () => {
-      document.getElementById('help-modal').classList.add('open');
-    });
-    document.getElementById('close-help').addEventListener('click', () => {
-      document.getElementById('help-modal').classList.remove('open');
-    });
-
-    document.getElementById('stats-btn').addEventListener('click', () => {
-      renderStats();
-      document.getElementById('stats-modal').classList.add('open');
-    });
-    document.getElementById('close-stats').addEventListener('click', () => {
-      document.getElementById('stats-modal').classList.remove('open');
-    });
+    document.getElementById('yesterday-btn').addEventListener('click', () => { renderYesterdayAnswers(); document.getElementById('yesterday-modal').classList.add('open'); });
+    document.getElementById('close-yesterday').addEventListener('click', () => document.getElementById('yesterday-modal').classList.remove('open'));
+    document.getElementById('help-btn').addEventListener('click', () => document.getElementById('help-modal').classList.add('open'));
+    document.getElementById('close-help').addEventListener('click', () => document.getElementById('help-modal').classList.remove('open'));
+    document.getElementById('stats-btn').addEventListener('click', () => { renderStats(); document.getElementById('stats-modal').classList.add('open'); });
+    document.getElementById('close-stats').addEventListener('click', () => document.getElementById('stats-modal').classList.remove('open'));
 
     window.addEventListener('keydown', handleKeyPress);
 
     window.onload = function() {
       loadProgress();
-      generateDailyCrossword();
-      renderBoard();
-      renderClues();
+      loadGoogleSheetWordBank();
     };
   </script>
 </body>
