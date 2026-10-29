@@ -180,8 +180,30 @@
   </div>
 
   <script>
-    // Direct raw CSV export endpoint to avoid HTML wrap
-    const CSV_URL = `https://docs.google.com/spreadsheets/d/16mDDf_hlxak7MPRprs-bWBFy83Mrs8WWHdtFJ8LP_SQ/export?format=csv&gid=0`;
+    // Direct raw CSV endpoint generated from published sheet
+    const CSV_URL = `https://docs.google.com/spreadsheets/d/e/2PACX-1vRO4mJOvOpCVZXcRKSnBlrjC8Fih94BMFuPj5VxQme0nt39x-DzfQGpWFIDhzaXeTEkfYHOZlw0ojmL/pub?gid=0&single=true&output=csv`;
+
+    const FALLBACK_WORD_BANK = [
+      { word: "NUMBER", clue: "A mathematical object used to count, measure, and label amounts." },
+      { word: "QUANTITY", clue: "The amount, size, or number of something that can be counted or measured." },
+      { word: "DIGIT", clue: "Any of the single numerals from 0 to 9 used to form numbers." },
+      { word: "NUMERAL", clue: "A written symbol or group of symbols representing a number." },
+      { word: "COUNT", clue: "To recite numbers in sequence to find the total quantity of items in a set." },
+      { word: "ONES", clue: "The single-digit place value representing units from 0 to 9." },
+      { word: "TENS", clue: "The place value representing groups of ten ones." },
+      { word: "ORDER", clue: "Arranging numbers or objects according to a specific rule." },
+      { word: "EQUAL", clue: "Having the exact same value, quantity, or amount." },
+      { word: "COMPARE", clue: "To examine two or more numbers or objects to determine size." },
+      { word: "ZERO", clue: "The numerical digit representing the absence of quantity." },
+      { word: "TOTAL", clue: "The complete sum or amount obtained by combining all parts." },
+      { word: "SUM", clue: "The result obtained by adding two or more numbers together." },
+      { word: "CIRCLE", clue: "A closed 2D shape where all boundary points are equidistant from center." },
+      { word: "SQUARE", clue: "A regular quadrilateral with four equal sides and four right angles." },
+      { word: "TRIANGLE", clue: "A polygon with three sides and three angles." },
+      { word: "CUBE", clue: "A 3D solid figure bounded by six congruent square faces." },
+      { word: "ADDITION", clue: "The mathematical operation of combining two or more quantities." },
+      { word: "SUBTRACTION", clue: "The mathematical operation of finding the difference between quantities." }
+    ];
 
     let globalWordBank = [];
     let currentLevel = 2;
@@ -222,7 +244,6 @@
         if (!response.ok) throw new Error('HTTP status ' + response.status);
         const text = await response.text();
         
-        // Guard check against HTML interstitials
         if (text.trim().startsWith("<!DOCTYPE") || text.trim().startsWith("<html")) {
           throw new Error("Received HTML page instead of raw CSV.");
         }
@@ -252,13 +273,15 @@
 
         globalWordBank = bank;
         document.getElementById('message').textContent = '';
-        generateDailyCrossword();
-        renderBoard();
-        renderClues();
       } catch (err) {
-        console.error("Failed to load Google Sheet word bank:", err);
-        document.getElementById('message').textContent = 'Error loading word bank from Google Sheets.';
+        console.warn("Using fallback bank because Google Sheet fetch failed or returned invalid format:", err);
+        globalWordBank = FALLBACK_WORD_BANK;
+        document.getElementById('message').textContent = '';
       }
+
+      generateDailyCrossword();
+      renderBoard();
+      renderClues();
     }
 
     function saveProgress() {
