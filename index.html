@@ -180,8 +180,8 @@
   </div>
 
   <script>
-    // Paste your published CSV link from Google Sheets below:
-    const CSV_URL = `https://docs.google.com/spreadsheets/d/e/2PACX-1vRO4mJOvOpCVZXcRKSnBlrjC8Fih94BMFuPj5VxQme0nt39x-DzfQGpWFIDhzaXeTEkfYHOZlw0ojmL/pubhtml?gid=0&single=true`;
+    // Direct raw CSV export endpoint to avoid HTML wrap
+    const CSV_URL = `https://docs.google.com/spreadsheets/d/16mDDf_hlxak7MPRprs-bWBFy83Mrs8WWHdtFJ8LP_SQ/export?format=csv&gid=0`;
 
     let globalWordBank = [];
     let currentLevel = 2;
@@ -222,6 +222,11 @@
         if (!response.ok) throw new Error('HTTP status ' + response.status);
         const text = await response.text();
         
+        // Guard check against HTML interstitials
+        if (text.trim().startsWith("<!DOCTYPE") || text.trim().startsWith("<html")) {
+          throw new Error("Received HTML page instead of raw CSV.");
+        }
+
         const lines = text.split(/\r?\n/);
         const bank = [];
         
