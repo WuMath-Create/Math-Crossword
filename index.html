@@ -180,8 +180,8 @@
   </div>
 
   <script>
-    const SPREADSHEET_ID = '16mDDf_hlxak7MPRprs-bWBFy83Mrs8WWHdtFJ8LP_SQ';
-    const CSV_URL = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/pub?output=csv`;
+    // Paste your published CSV link from Google Sheets below:
+    const CSV_URL = `https://docs.google.com/spreadsheets/d/e/2PACX-1vRO4mJOvOpCVZXcRKSnBlrjC8Fih94BMFuPj5VxQme0nt39x-DzfQGpWFIDhzaXeTEkfYHOZlw0ojmL/pubhtml?gid=0&single=true`;
 
     let globalWordBank = [];
     let currentLevel = 2;
@@ -196,44 +196,54 @@
     let checkedStatusByLevel = {};
     let completedLevelsToday = {};
 
+    function parseCSVLine(text) {
+      const result = [];
+      let cell = '';
+      let inQuotes = false;
+      for (let i = 0; i < text.length; i++) {
+        const c = text[i];
+        if (c === '"') {
+          if (inQuotes && text[i + 1] === '"') { cell += '"'; i++; }
+          else { inQuotes = !inQuotes; }
+        } else if (c === ',' && !inQuotes) {
+          result.push(cell.trim());
+          cell = '';
+        } else {
+          cell += c;
+        }
+      }
+      result.push(cell.trim());
+      return result;
+    }
+
     async function loadGoogleSheetWordBank() {
       try {
         const response = await fetch(CSV_URL);
+        if (!response.ok) throw new Error('HTTP status ' + response.status);
         const text = await response.text();
         
-        const lines = text.split('\n');
+        const lines = text.split(/\r?\n/);
         const bank = [];
         
         for (let i = 1; i < lines.length; i++) {
           const line = lines[i].trim();
           if (!line) continue;
           
-          let word = "";
-          let clue = "";
-          
-          if (line.startsWith('"')) {
-            const nextQuoteIdx = line.indexOf('",', 1);
-            if (nextQuoteIdx !== -1) {
-              word = line.substring(1, nextQuoteIdx);
-              clue = line.substring(nextQuoteIdx + 2).replace(/^"/, '').replace(/"$/, '');
-            } else {
-              const parts = line.split(',');
-              word = parts[0];
-              clue = parts.slice(1).join(',');
+          const parts = parseCSVLine(line);
+          if (parts.length >= 2) {
+            let rawWord = parts[0];
+            let rawClue = parts[1];
+            
+            let word = rawWord.replace(/[^a-zA-Z]/g, '').toUpperCase();
+            let clue = rawClue.trim();
+
+            if (word && clue) {
+              bank.push({ word, clue });
             }
-          } else {
-            const parts = line.split(',');
-            word = parts[0];
-            clue = parts.slice(1).join(',');
-          }
-
-          word = word.replace(/[^a-zA-Z]/g, '').toUpperCase();
-          clue = clue.trim();
-
-          if (word && clue) {
-            bank.push({ word, clue });
           }
         }
+
+        if (bank.length === 0) throw new Error("Parsed empty bank");
 
         globalWordBank = bank;
         document.getElementById('message').textContent = '';
